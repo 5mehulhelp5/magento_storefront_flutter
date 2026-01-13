@@ -1,0 +1,612 @@
+import '../core/magento_client.dart';
+import '../core/magento_exception.dart';
+import '../models/cart/cart.dart' as models;
+
+/// Cart module for Magento Storefront
+class MagentoCartModule {
+  final MagentoClient _client;
+
+  MagentoCartModule(this._client);
+
+  /// Create a new cart
+  /// 
+  /// Example:
+  /// ```dart
+  /// final cart = await MagentoCartModule.createCart();
+  /// ```
+  Future<models.MagentoCart> createCart() async {
+    final query = '''
+      mutation CreateCart {
+        createEmptyCart
+      }
+    ''';
+
+    try {
+      final response = await _client.mutate(query);
+
+      final data = response['data'] as Map<String, dynamic>?;
+      if (data == null) {
+        throw MagentoException('Invalid response from server');
+      }
+
+      final cartId = data['createEmptyCart'] as String?;
+      if (cartId == null || cartId.isEmpty) {
+        throw MagentoException('Failed to create cart');
+      }
+
+      // Return cart with the new ID
+      return models.MagentoCart(
+        id: cartId,
+        items: [],
+        totalQuantity: 0,
+        isEmpty: true,
+      );
+    } on MagentoException catch (e) {
+      print('[MagentoCart] Create cart error: ${e.toString()}');
+      rethrow;
+    } catch (e, stackTrace) {
+      print('[MagentoCart] Failed to create cart: ${e.toString()}');
+      print('[MagentoCart] Stack trace: $stackTrace');
+      throw MagentoException(
+        'Failed to create cart: ${e.toString()}',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Add product to cart
+  /// 
+  /// Example:
+  /// ```dart
+  /// final cart = await MagentoCartModule.addProductToCart(
+  ///   cartId: 'cart-id',
+  ///   sku: 'product-sku',
+  ///   quantity: 1,
+  /// );
+  /// ```
+  Future<models.MagentoCart> addProductToCart({
+    required String cartId,
+    required String sku,
+    int quantity = 1,
+  }) async {
+    final query = '''
+      mutation AddProductToCart(
+        \$cartId: String!,
+        \$sku: String!,
+        \$quantity: Float!
+      ) {
+        addProductsToCart(
+          cartId: \$cartId,
+          cartItems: [
+            {
+              sku: \$sku,
+              quantity: \$quantity
+            }
+          ]
+        ) {
+          cart {
+            id
+            items {
+              id
+              quantity
+              product {
+                id
+                sku
+                name
+                url_key
+                description {
+                  html
+                }
+                short_description {
+                  html
+                }
+                image {
+                  url
+                  label
+                  position
+                }
+                price_range {
+                  minimum_price {
+                    regular_price {
+                      value
+                      currency
+                    }
+                    final_price {
+                      value
+                      currency
+                    }
+                  }
+                  maximum_price {
+                    regular_price {
+                      value
+                      currency
+                    }
+                    final_price {
+                      value
+                      currency
+                    }
+                  }
+                }
+                stock_status
+              }
+              prices {
+                price {
+                  value
+                  currency
+                }
+                row_total {
+                  value
+                  currency
+                }
+              }
+            }
+            prices {
+              grand_total {
+                value
+                currency
+              }
+              subtotal_excluding_tax {
+                value
+                currency
+              }
+              subtotal_including_tax {
+                value
+                currency
+              }
+            }
+            total_quantity
+          }
+        }
+      }
+    ''';
+
+    try {
+      final response = await _client.mutate(
+        query,
+        variables: {
+          'cartId': cartId,
+          'sku': sku,
+          'quantity': quantity.toDouble(),
+        },
+      );
+
+      final data = response['data'] as Map<String, dynamic>?;
+      if (data == null) {
+        throw MagentoException('Invalid response from server');
+      }
+
+      final addProductsData = data['addProductsToCart'] as Map<String, dynamic>?;
+      if (addProductsData == null) {
+        throw MagentoException('Failed to add product to cart');
+      }
+
+      final cartData = addProductsData['cart'] as Map<String, dynamic>?;
+      if (cartData == null) {
+        throw MagentoException('Cart data not found in response');
+      }
+
+      return models.MagentoCart.fromJson(cartData);
+    } on MagentoException catch (e) {
+      print('[MagentoCart] Add product to cart error: ${e.toString()}');
+      rethrow;
+    } catch (e, stackTrace) {
+      print('[MagentoCart] Failed to add product to cart: ${e.toString()}');
+      print('[MagentoCart] Stack trace: $stackTrace');
+      throw MagentoException(
+        'Failed to add product to cart: ${e.toString()}',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Get cart by ID
+  /// 
+  /// Example:
+  /// ```dart
+  /// final cart = await MagentoCartModule.getCart('cart-id');
+  /// ```
+  Future<models.MagentoCart?> getCart(String cartId) async {
+    final query = '''
+      query GetCart(\$cartId: String!) {
+        cart(cart_id: \$cartId) {
+          id
+          items {
+            id
+            quantity
+            product {
+              id
+              sku
+              name
+              url_key
+              description {
+                html
+              }
+              short_description {
+                html
+              }
+              image {
+                url
+                label
+                position
+              }
+              price_range {
+                minimum_price {
+                  regular_price {
+                    value
+                    currency
+                  }
+                  final_price {
+                    value
+                    currency
+                  }
+                }
+                maximum_price {
+                  regular_price {
+                    value
+                    currency
+                  }
+                  final_price {
+                    value
+                    currency
+                  }
+                }
+              }
+              stock_status
+            }
+            prices {
+              price {
+                value
+                currency
+              }
+              row_total {
+                value
+                currency
+              }
+            }
+          }
+          prices {
+            grand_total {
+              value
+              currency
+            }
+            subtotal_excluding_tax {
+              value
+              currency
+            }
+            subtotal_including_tax {
+              value
+              currency
+            }
+          }
+          total_quantity
+        }
+      }
+    ''';
+
+    try {
+      final response = await _client.query(
+        query,
+        variables: {'cartId': cartId},
+      );
+
+      final data = response['data'] as Map<String, dynamic>?;
+      if (data == null) {
+        throw MagentoException('Invalid response from server');
+      }
+
+      final cartData = data['cart'] as Map<String, dynamic>?;
+      if (cartData == null) {
+        return null;
+      }
+
+      return models.MagentoCart.fromJson(cartData);
+    } on MagentoException catch (e) {
+      print('[MagentoCart] Get cart error: ${e.toString()}');
+      rethrow;
+    } catch (e, stackTrace) {
+      print('[MagentoCart] Failed to get cart: ${e.toString()}');
+      print('[MagentoCart] Stack trace: $stackTrace');
+      throw MagentoException(
+        'Failed to get cart: ${e.toString()}',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Update cart item quantity
+  /// 
+  /// Example:
+  /// ```dart
+  /// final cart = await MagentoCartModule.updateCartItem(
+  ///   cartId: 'cart-id',
+  ///   itemId: 'item-id',
+  ///   quantity: 2,
+  /// );
+  /// ```
+  Future<models.MagentoCart> updateCartItem({
+    required String cartId,
+    required String itemId,
+    required int quantity,
+  }) async {
+    // Convert itemId to int as Magento expects Int type
+    final itemIdInt = int.tryParse(itemId);
+    if (itemIdInt == null) {
+      throw MagentoException('Invalid cart item ID: $itemId');
+    }
+
+    final query = '''
+      mutation UpdateCartItem(
+        \$cartId: String!,
+        \$itemId: Int!,
+        \$quantity: Float!
+      ) {
+        updateCartItems(
+          input: {
+            cart_id: \$cartId,
+            cart_items: [
+              {
+                cart_item_id: \$itemId,
+                quantity: \$quantity
+              }
+            ]
+          }
+        ) {
+          cart {
+            id
+            items {
+              id
+              quantity
+              product {
+                id
+                sku
+                name
+                url_key
+                description {
+                  html
+                }
+                short_description {
+                  html
+                }
+                image {
+                  url
+                  label
+                  position
+                }
+                price_range {
+                  minimum_price {
+                    regular_price {
+                      value
+                      currency
+                    }
+                    final_price {
+                      value
+                      currency
+                    }
+                  }
+                  maximum_price {
+                    regular_price {
+                      value
+                      currency
+                    }
+                    final_price {
+                      value
+                      currency
+                    }
+                  }
+                }
+                stock_status
+              }
+              prices {
+                price {
+                  value
+                  currency
+                }
+                row_total {
+                  value
+                  currency
+                }
+              }
+            }
+            prices {
+              grand_total {
+                value
+                currency
+              }
+              subtotal_excluding_tax {
+                value
+                currency
+              }
+              subtotal_including_tax {
+                value
+                currency
+              }
+            }
+            total_quantity
+          }
+        }
+      }
+    ''';
+
+    try {
+      final response = await _client.mutate(
+        query,
+        variables: {
+          'cartId': cartId,
+          'itemId': itemIdInt,
+          'quantity': quantity.toDouble(),
+        },
+      );
+
+      final data = response['data'] as Map<String, dynamic>?;
+      if (data == null) {
+        throw MagentoException('Invalid response from server');
+      }
+
+      final updateCartData = data['updateCartItems'] as Map<String, dynamic>?;
+      if (updateCartData == null) {
+        throw MagentoException('Failed to update cart item');
+      }
+
+      final cartData = updateCartData['cart'] as Map<String, dynamic>?;
+      if (cartData == null) {
+        throw MagentoException('Cart data not found in response');
+      }
+
+      return models.MagentoCart.fromJson(cartData);
+    } on MagentoException catch (e) {
+      print('[MagentoCart] Update cart item error: ${e.toString()}');
+      rethrow;
+    } catch (e, stackTrace) {
+      print('[MagentoCart] Failed to update cart item: ${e.toString()}');
+      print('[MagentoCart] Stack trace: $stackTrace');
+      throw MagentoException(
+        'Failed to update cart item: ${e.toString()}',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Remove item from cart
+  /// 
+  /// Example:
+  /// ```dart
+  /// final cart = await MagentoCartModule.removeCartItem(
+  ///   cartId: 'cart-id',
+  ///   itemId: 'item-id',
+  /// );
+  /// ```
+  Future<models.MagentoCart> removeCartItem({
+    required String cartId,
+    required String itemId,
+  }) async {
+    // Convert itemId to int as Magento expects Int type
+    final itemIdInt = int.tryParse(itemId);
+    if (itemIdInt == null) {
+      throw MagentoException('Invalid cart item ID: $itemId');
+    }
+
+    final query = '''
+      mutation RemoveCartItem(
+        \$cartId: String!,
+        \$itemId: Int!
+      ) {
+        removeItemFromCart(
+          input: {
+            cart_id: \$cartId,
+            cart_item_id: \$itemId
+          }
+        ) {
+          cart {
+            id
+            items {
+              id
+              quantity
+              product {
+                id
+                sku
+                name
+                url_key
+                description {
+                  html
+                }
+                short_description {
+                  html
+                }
+                image {
+                  url
+                  label
+                  position
+                }
+                price_range {
+                  minimum_price {
+                    regular_price {
+                      value
+                      currency
+                    }
+                    final_price {
+                      value
+                      currency
+                    }
+                  }
+                  maximum_price {
+                    regular_price {
+                      value
+                      currency
+                    }
+                    final_price {
+                      value
+                      currency
+                    }
+                  }
+                }
+                stock_status
+              }
+              prices {
+                price {
+                  value
+                  currency
+                }
+                row_total {
+                  value
+                  currency
+                }
+              }
+            }
+            prices {
+              grand_total {
+                value
+                currency
+              }
+              subtotal_excluding_tax {
+                value
+                currency
+              }
+              subtotal_including_tax {
+                value
+                currency
+              }
+            }
+            total_quantity
+          }
+        }
+      }
+    ''';
+
+    try {
+      final response = await _client.mutate(
+        query,
+        variables: {
+          'cartId': cartId,
+          'itemId': itemIdInt,
+        },
+      );
+
+      final data = response['data'] as Map<String, dynamic>?;
+      if (data == null) {
+        throw MagentoException('Invalid response from server');
+      }
+
+      final removeItemData = data['removeItemFromCart'] as Map<String, dynamic>?;
+      if (removeItemData == null) {
+        throw MagentoException('Failed to remove cart item');
+      }
+
+      final cartData = removeItemData['cart'] as Map<String, dynamic>?;
+      if (cartData == null) {
+        throw MagentoException('Cart data not found in response');
+      }
+
+      return models.MagentoCart.fromJson(cartData);
+    } on MagentoException catch (e) {
+      print('[MagentoCart] Remove cart item error: ${e.toString()}');
+      rethrow;
+    } catch (e, stackTrace) {
+      print('[MagentoCart] Failed to remove cart item: ${e.toString()}');
+      print('[MagentoCart] Stack trace: $stackTrace');
+      throw MagentoException(
+        'Failed to remove cart item: ${e.toString()}',
+        originalError: e,
+      );
+    }
+  }
+}

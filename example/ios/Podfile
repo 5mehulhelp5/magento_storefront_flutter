@@ -1,0 +1,81 @@
+# Uncomment this line to define a global platform for your project
+platform :ios, '13.0'
+
+# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  # Try to get FLUTTER_ROOT from environment variable first
+  return ENV['FLUTTER_ROOT'] if ENV['FLUTTER_ROOT']
+  
+  # Try to get from Generated.xcconfig
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  if File.exist?(generated_xcode_build_settings_path)
+    File.foreach(generated_xcode_build_settings_path) do |line|
+      matches = line.match(/FLUTTER_ROOT\=(.*)/)
+      return matches[1].strip if matches
+    end
+  end
+  
+  # Try common Flutter installation paths
+  common_paths = [
+    '/Users/bytes-darshan/flutter-SDK/flutter',
+    File.expand_path('~/flutter-SDK/flutter'),
+    File.expand_path('~/flutter'),
+    File.expand_path('../../flutter', __FILE__),
+    File.expand_path('../../../../flutter', __FILE__),
+  ]
+  
+  common_paths.each do |path|
+    expanded_path = File.expand_path(path)
+    # Check for podhelper.rb (Flutter uses .rb extension)
+    podhelper_path = File.join(expanded_path, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
+    if File.exist?(podhelper_path)
+      return expanded_path
+    end
+    # Also check for podhelper without extension (older versions)
+    podhelper_path_no_ext = File.join(expanded_path, 'packages', 'flutter_tools', 'bin', 'podhelper')
+    if File.exist?(podhelper_path_no_ext)
+      return expanded_path
+    end
+  end
+  
+  # Last resort: use which flutter to find it
+  flutter_bin = `which flutter 2>/dev/null`.strip
+  if !flutter_bin.empty? && File.exist?(flutter_bin)
+    # flutter binary is typically at flutter/bin/flutter, so go up one level
+    flutter_path = File.expand_path(File.dirname(File.dirname(flutter_bin)))
+    podhelper_path = File.join(flutter_path, 'packages', 'flutter_tools', 'bin', 'podhelper')
+    if File.exist?(podhelper_path)
+      return flutter_path
+    end
+  end
+  
+  raise "FLUTTER_ROOT not found. Please set FLUTTER_ROOT environment variable or run 'flutter pub get' first"
+end
+
+podhelper_path = File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
+podhelper_path = File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper') unless File.exist?(podhelper_path)
+require podhelper_path
+
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'
+    end
+  end
+end

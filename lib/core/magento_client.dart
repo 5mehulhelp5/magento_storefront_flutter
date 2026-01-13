@@ -80,12 +80,28 @@ class MagentoClient {
 
       // Check for HTTP errors
       if (response.statusCode != 200) {
-        throw ErrorMapper.mapHttpError(response);
+        final exception = ErrorMapper.mapHttpError(response);
+        print('[MagentoClient] HTTP Error: ${exception.toString()}');
+        print('[MagentoClient] Response Status: ${response.statusCode}');
+        print('[MagentoClient] Response Body: ${response.body}');
+        throw exception;
       }
 
       // Check for GraphQL errors
       if (finalResponse.containsKey('errors')) {
         final exception = ErrorMapper.mapGraphQLError(finalResponse);
+        print('[MagentoClient] GraphQL Error: ${exception.toString()}');
+        if (exception.errors != null) {
+          for (var error in exception.errors!) {
+            print('[MagentoClient] GraphQL Error Detail: ${error.message}');
+            if (error.locations != null) {
+              print('[MagentoClient] Error Locations: ${error.locations}');
+            }
+            if (error.path != null) {
+              print('[MagentoClient] Error Path: ${error.path}');
+            }
+          }
+        }
         interceptor?.onError(exception);
         throw exception;
       }
@@ -93,12 +109,21 @@ class MagentoClient {
       return finalResponse;
     } on http.ClientException catch (e) {
       final exception = ErrorMapper.mapNetworkException(e);
+      print('[MagentoClient] Network Exception: ${exception.toString()}');
+      print('[MagentoClient] Original Error: ${e.toString()}');
       interceptor?.onError(exception);
       throw exception;
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoClient] MagentoException: ${e.toString()}');
+      if (e.originalError != null) {
+        print('[MagentoClient] Original Error: ${e.originalError}');
+      }
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
       final exception = ErrorMapper.mapNetworkException(e);
+      print('[MagentoClient] Unexpected Error: ${exception.toString()}');
+      print('[MagentoClient] Original Error: ${e.toString()}');
+      print('[MagentoClient] Stack Trace: $stackTrace');
       interceptor?.onError(exception);
       throw exception;
     }

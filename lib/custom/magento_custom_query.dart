@@ -36,9 +36,12 @@ class MagentoCustomQuery {
         variables: variables,
         additionalHeaders: additionalHeaders,
       );
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoCustomQuery] Custom query error: ${e.toString()}');
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[MagentoCustomQuery] Custom query failed: ${e.toString()}');
+      print('[MagentoCustomQuery] Stack trace: $stackTrace');
       throw MagentoException(
         'Custom query failed: ${e.toString()}',
         originalError: e,
@@ -72,9 +75,12 @@ class MagentoCustomQuery {
         variables: variables,
         additionalHeaders: additionalHeaders,
       );
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoCustomQuery] Custom mutation error: ${e.toString()}');
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[MagentoCustomQuery] Custom mutation failed: ${e.toString()}');
+      print('[MagentoCustomQuery] Stack trace: $stackTrace');
       throw MagentoException(
         'Custom mutation failed: ${e.toString()}',
         originalError: e,

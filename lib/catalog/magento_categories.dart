@@ -63,9 +63,12 @@ class MagentoCategories {
       }
 
       return MagentoCategory.fromJson(categoryData);
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoCategories] Get category by ID error: ${e.toString()}');
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[MagentoCategories] Failed to get category: ${e.toString()}');
+      print('[MagentoCategories] Stack trace: $stackTrace');
       throw MagentoException(
         'Failed to get category: ${e.toString()}',
         originalError: e,
@@ -140,9 +143,12 @@ class MagentoCategories {
       return categoryListData
           .map((c) => MagentoCategory.fromJson(c as Map<String, dynamic>))
           .toList();
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoCategories] Get category tree error: ${e.toString()}');
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[MagentoCategories] Failed to get category tree: ${e.toString()}');
+      print('[MagentoCategories] Stack trace: $stackTrace');
       throw MagentoException(
         'Failed to get category tree: ${e.toString()}',
         originalError: e,

@@ -23,8 +23,14 @@ export 'catalog/magento_categories.dart';
 export 'catalog/magento_products.dart';
 export 'catalog/magento_search.dart';
 
+// Cart exports
+export 'cart/magento_cart.dart';
+
 // Custom query exports
 export 'custom/magento_custom_query.dart';
+
+// Model exports (cart models)
+export 'models/cart/cart.dart';
 
 // Main SDK class
 export 'magento_sdk.dart';

@@ -7,6 +7,7 @@ import 'store/magento_store.dart';
 import 'catalog/magento_categories.dart';
 import 'catalog/magento_products.dart';
 import 'catalog/magento_search.dart';
+import 'cart/magento_cart.dart';
 import 'custom/magento_custom_query.dart';
 
 /// Main SDK class for Magento Storefront Flutter
@@ -43,6 +44,7 @@ class MagentoSDK {
   late final MagentoCategories categories;
   late final MagentoProducts products;
   late final MagentoSearch search;
+  late final MagentoCartModule cart;
   late final MagentoCustomQuery custom;
 
   /// Create a new MagentoSDK instance
@@ -65,6 +67,7 @@ class MagentoSDK {
     categories = MagentoCategories(_client);
     products = MagentoProducts(_client);
     search = MagentoSearch(_client);
+    cart = MagentoCartModule(_client);
     custom = MagentoCustomQuery(_client);
   }
 

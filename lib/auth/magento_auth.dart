@@ -60,9 +60,12 @@ class MagentoAuth {
       _client.setAuthToken(token);
 
       return MagentoAuthResult(token: token);
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoAuth] Login error: ${e.toString()}');
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[MagentoAuth] Login failed: ${e.toString()}');
+      print('[MagentoAuth] Stack trace: $stackTrace');
       throw MagentoAuthenticationException(
         'Login failed: ${e.toString()}',
         originalError: e,
@@ -134,9 +137,12 @@ class MagentoAuth {
 
       // After successful registration, automatically login
       return await login(email, password);
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoAuth] Registration error: ${e.toString()}');
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[MagentoAuth] Registration failed: ${e.toString()}');
+      print('[MagentoAuth] Stack trace: $stackTrace');
       throw MagentoAuthenticationException(
         'Registration failed: ${e.toString()}',
         originalError: e,
@@ -174,9 +180,12 @@ class MagentoAuth {
       if (success != true) {
         throw MagentoAuthenticationException('Failed to send password reset email');
       }
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoAuth] Forgot password error: ${e.toString()}');
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[MagentoAuth] Forgot password failed: ${e.toString()}');
+      print('[MagentoAuth] Stack trace: $stackTrace');
       throw MagentoAuthenticationException(
         'Forgot password request failed: ${e.toString()}',
         originalError: e,

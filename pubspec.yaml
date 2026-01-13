@@ -1,7 +1,7 @@
 name: magento_storefront_flutter
 description: "A production-ready Flutter SDK for Magento 2 Storefront GraphQL API"
-version: 0.1.0
-homepage: https://github.com/yourusername/magento_storefront_flutter
+version: 0.0.1
+homepage: https://github.com/darshanvachhani08/magento_storefront_flutter
 
 environment:
   sdk: ^3.10.4

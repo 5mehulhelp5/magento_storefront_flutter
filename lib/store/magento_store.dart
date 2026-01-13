@@ -49,9 +49,12 @@ class MagentoStoreModule {
       }
 
       return models.MagentoStoreConfig.fromJson(storeConfigData);
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoStore] Get store config error: ${e.toString()}');
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[MagentoStore] Failed to get store config: ${e.toString()}');
+      print('[MagentoStore] Stack trace: $stackTrace');
       throw MagentoException(
         'Failed to get store config: ${e.toString()}',
         originalError: e,
@@ -100,9 +103,12 @@ class MagentoStoreModule {
       return storesData
           .map((s) => models.MagentoStore.fromJson(s as Map<String, dynamic>))
           .toList();
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoStore] Get stores error: ${e.toString()}');
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[MagentoStore] Failed to get stores: ${e.toString()}');
+      print('[MagentoStore] Stack trace: $stackTrace');
       throw MagentoException(
         'Failed to get stores: ${e.toString()}',
         originalError: e,

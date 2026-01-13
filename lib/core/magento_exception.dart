@@ -44,11 +44,32 @@ class MagentoNetworkException extends MagentoException {
   String toString() => 'MagentoNetworkException: $message';
 }
 
+/// GraphQL error location structure
+class GraphQLErrorLocation {
+  final int line;
+  final int column;
+
+  GraphQLErrorLocation({
+    required this.line,
+    required this.column,
+  });
+
+  factory GraphQLErrorLocation.fromJson(Map<String, dynamic> json) {
+    return GraphQLErrorLocation(
+      line: json['line'] as int,
+      column: json['column'] as int,
+    );
+  }
+
+  @override
+  String toString() => 'line $line, column $column';
+}
+
 /// GraphQL error structure
 class GraphQLError {
   final String message;
-  final List<String>? locations;
-  final List<String>? path;
+  final List<GraphQLErrorLocation>? locations;
+  final List<dynamic>? path;
   final Map<String, dynamic>? extensions;
 
   GraphQLError({
@@ -62,9 +83,11 @@ class GraphQLError {
     return GraphQLError(
       message: json['message'] as String,
       locations: json['locations'] != null
-          ? (json['locations'] as List).cast<String>()
+          ? (json['locations'] as List)
+              .map((l) => GraphQLErrorLocation.fromJson(l as Map<String, dynamic>))
+              .toList()
           : null,
-      path: json['path'] != null ? (json['path'] as List).cast<String>() : null,
+      path: json['path'] != null ? (json['path'] as List) : null,
       extensions: json['extensions'] != null
           ? Map<String, dynamic>.from(json['extensions'])
           : null,

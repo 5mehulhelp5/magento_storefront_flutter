@@ -10,7 +10,7 @@ class MagentoSearch {
   MagentoSearch(this._client);
 
   /// Search products by query string
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final results = await MagentoSearch.searchProducts(
@@ -26,7 +26,7 @@ class MagentoSearch {
     String? sortBy,
   }) async {
     final sortField = sortBy ?? 'relevance';
-    
+
     final graphqlQuery = '''
       query SearchProducts(
         \$search: String!,
@@ -66,10 +66,6 @@ class MagentoSearch {
                   value
                   currency
                 }
-                discount {
-                  value
-                  currency
-                }
               }
               maximum_price {
                 regular_price {
@@ -96,7 +92,7 @@ class MagentoSearch {
 
     try {
       final sortInput = _getSortInput(sortField);
-      
+
       final response = await _client.query(
         graphqlQuery,
         variables: {
@@ -136,9 +132,12 @@ class MagentoSearch {
         pageSize: pageInfo?['page_size'] as int? ?? pageSize,
         totalPages: pageInfo?['total_pages'] as int? ?? 0,
       );
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoSearch] Search products error: ${e.toString()}');
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[MagentoSearch] Failed to search products: ${e.toString()}');
+      print('[MagentoSearch] Stack trace: $stackTrace');
       throw MagentoException(
         'Failed to search products: ${e.toString()}',
         originalError: e,

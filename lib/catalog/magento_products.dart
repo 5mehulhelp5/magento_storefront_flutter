@@ -9,7 +9,7 @@ class MagentoProducts {
   MagentoProducts(this._client);
 
   /// Get product by SKU
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final product = await MagentoProducts.getProductBySku('product-sku');
@@ -44,10 +44,6 @@ class MagentoProducts {
                   value
                   currency
                 }
-                discount {
-                  value
-                  currency
-                }
               }
               maximum_price {
                 regular_price {
@@ -67,10 +63,7 @@ class MagentoProducts {
     ''';
 
     try {
-      final response = await _client.query(
-        query,
-        variables: {'sku': sku},
-      );
+      final response = await _client.query(query, variables: {'sku': sku});
 
       final data = response['data'] as Map<String, dynamic>?;
       if (data == null) {
@@ -88,9 +81,12 @@ class MagentoProducts {
       }
 
       return MagentoProduct.fromJson(items.first as Map<String, dynamic>);
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoProducts] Get product by SKU error: ${e.toString()}');
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[MagentoProducts] Failed to get product by SKU: ${e.toString()}');
+      print('[MagentoProducts] Stack trace: $stackTrace');
       throw MagentoException(
         'Failed to get product: ${e.toString()}',
         originalError: e,
@@ -99,7 +95,7 @@ class MagentoProducts {
   }
 
   /// Get product by URL key
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final product = await MagentoProducts.getProductByUrlKey('product-url-key');
@@ -131,10 +127,6 @@ class MagentoProducts {
                   currency
                 }
                 final_price {
-                  value
-                  currency
-                }
-                discount {
                   value
                   currency
                 }
@@ -178,9 +170,12 @@ class MagentoProducts {
       }
 
       return MagentoProduct.fromJson(items.first as Map<String, dynamic>);
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoProducts] Get product by URL key error: ${e.toString()}');
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[MagentoProducts] Failed to get product by URL key: ${e.toString()}');
+      print('[MagentoProducts] Stack trace: $stackTrace');
       throw MagentoException(
         'Failed to get product: ${e.toString()}',
         originalError: e,
@@ -189,7 +184,7 @@ class MagentoProducts {
   }
 
   /// Get products by category ID
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final products = await MagentoProducts.getProductsByCategoryId(
@@ -237,10 +232,6 @@ class MagentoProducts {
                   currency
                 }
                 final_price {
-                  value
-                  currency
-                }
-                discount {
                   value
                   currency
                 }
@@ -307,9 +298,12 @@ class MagentoProducts {
         pageSize: pageInfo?['page_size'] as int? ?? pageSize,
         totalPages: pageInfo?['total_pages'] as int? ?? 0,
       );
-    } on MagentoException {
+    } on MagentoException catch (e) {
+      print('[MagentoProducts] Get products by category error: ${e.toString()}');
       rethrow;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[MagentoProducts] Failed to get products by category: ${e.toString()}');
+      print('[MagentoProducts] Stack trace: $stackTrace');
       throw MagentoException(
         'Failed to get products: ${e.toString()}',
         originalError: e,
