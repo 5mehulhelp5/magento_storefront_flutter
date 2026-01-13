@@ -1,5 +1,6 @@
 import '../core/magento_client.dart';
 import '../core/magento_exception.dart';
+import '../core/magento_logger.dart';
 
 /// Custom query module for executing arbitrary GraphQL queries
 /// 
@@ -37,11 +38,14 @@ class MagentoCustomQuery {
         additionalHeaders: additionalHeaders,
       );
     } on MagentoException catch (e) {
-      print('[MagentoCustomQuery] Custom query error: ${e.toString()}');
+      MagentoLogger.error('[MagentoCustomQuery] Custom query error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoCustomQuery] Custom query failed: ${e.toString()}');
-      print('[MagentoCustomQuery] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoCustomQuery] Custom query failed: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Custom query failed: ${e.toString()}',
         originalError: e,
@@ -76,11 +80,14 @@ class MagentoCustomQuery {
         additionalHeaders: additionalHeaders,
       );
     } on MagentoException catch (e) {
-      print('[MagentoCustomQuery] Custom mutation error: ${e.toString()}');
+      MagentoLogger.error('[MagentoCustomQuery] Custom mutation error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoCustomQuery] Custom mutation failed: ${e.toString()}');
-      print('[MagentoCustomQuery] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoCustomQuery] Custom mutation failed: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Custom mutation failed: ${e.toString()}',
         originalError: e,

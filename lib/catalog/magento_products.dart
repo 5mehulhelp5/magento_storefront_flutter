@@ -1,5 +1,6 @@
 import '../core/magento_client.dart';
 import '../core/magento_exception.dart';
+import '../core/magento_logger.dart';
 import '../models/product/product.dart';
 
 /// Products module for Magento Storefront
@@ -82,11 +83,14 @@ class MagentoProducts {
 
       return MagentoProduct.fromJson(items.first as Map<String, dynamic>);
     } on MagentoException catch (e) {
-      print('[MagentoProducts] Get product by SKU error: ${e.toString()}');
+      MagentoLogger.error('[MagentoProducts] Get product by SKU error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoProducts] Failed to get product by SKU: ${e.toString()}');
-      print('[MagentoProducts] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoProducts] Failed to get product by SKU: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Failed to get product: ${e.toString()}',
         originalError: e,
@@ -171,11 +175,14 @@ class MagentoProducts {
 
       return MagentoProduct.fromJson(items.first as Map<String, dynamic>);
     } on MagentoException catch (e) {
-      print('[MagentoProducts] Get product by URL key error: ${e.toString()}');
+      MagentoLogger.error('[MagentoProducts] Get product by URL key error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoProducts] Failed to get product by URL key: ${e.toString()}');
-      print('[MagentoProducts] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoProducts] Failed to get product by URL key: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Failed to get product: ${e.toString()}',
         originalError: e,
@@ -299,11 +306,14 @@ class MagentoProducts {
         totalPages: pageInfo?['total_pages'] as int? ?? 0,
       );
     } on MagentoException catch (e) {
-      print('[MagentoProducts] Get products by category error: ${e.toString()}');
+      MagentoLogger.error('[MagentoProducts] Get products by category error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoProducts] Failed to get products by category: ${e.toString()}');
-      print('[MagentoProducts] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoProducts] Failed to get products by category: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Failed to get products: ${e.toString()}',
         originalError: e,

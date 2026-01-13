@@ -1,11 +1,10 @@
-library magento_storefront_flutter;
-
 // Core exports
 export 'core/magento_client.dart';
 export 'core/magento_config.dart';
 export 'core/magento_exception.dart';
 export 'core/graphql_interceptor.dart';
 export 'core/error_mapper.dart';
+export 'core/magento_logger.dart';
 
 // Auth exports
 export 'auth/magento_auth.dart';

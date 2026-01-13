@@ -1,5 +1,6 @@
 import '../core/magento_client.dart';
 import '../core/magento_exception.dart';
+import '../core/magento_logger.dart';
 
 /// Authentication result containing the token
 class MagentoAuthResult {
@@ -61,11 +62,14 @@ class MagentoAuth {
 
       return MagentoAuthResult(token: token);
     } on MagentoException catch (e) {
-      print('[MagentoAuth] Login error: ${e.toString()}');
+      MagentoLogger.error('[MagentoAuth] Login error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoAuth] Login failed: ${e.toString()}');
-      print('[MagentoAuth] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoAuth] Login failed: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoAuthenticationException(
         'Login failed: ${e.toString()}',
         originalError: e,
@@ -138,11 +142,14 @@ class MagentoAuth {
       // After successful registration, automatically login
       return await login(email, password);
     } on MagentoException catch (e) {
-      print('[MagentoAuth] Registration error: ${e.toString()}');
+      MagentoLogger.error('[MagentoAuth] Registration error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoAuth] Registration failed: ${e.toString()}');
-      print('[MagentoAuth] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoAuth] Registration failed: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoAuthenticationException(
         'Registration failed: ${e.toString()}',
         originalError: e,
@@ -181,11 +188,14 @@ class MagentoAuth {
         throw MagentoAuthenticationException('Failed to send password reset email');
       }
     } on MagentoException catch (e) {
-      print('[MagentoAuth] Forgot password error: ${e.toString()}');
+      MagentoLogger.error('[MagentoAuth] Forgot password error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoAuth] Forgot password failed: ${e.toString()}');
-      print('[MagentoAuth] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoAuth] Forgot password failed: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoAuthenticationException(
         'Forgot password request failed: ${e.toString()}',
         originalError: e,

@@ -1,5 +1,6 @@
 import '../core/magento_client.dart';
 import '../core/magento_exception.dart';
+import '../core/magento_logger.dart';
 import '../models/store/store.dart' as models;
 
 /// Store module for Magento Storefront
@@ -50,11 +51,14 @@ class MagentoStoreModule {
 
       return models.MagentoStoreConfig.fromJson(storeConfigData);
     } on MagentoException catch (e) {
-      print('[MagentoStore] Get store config error: ${e.toString()}');
+      MagentoLogger.error('[MagentoStore] Get store config error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoStore] Failed to get store config: ${e.toString()}');
-      print('[MagentoStore] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoStore] Failed to get store config: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Failed to get store config: ${e.toString()}',
         originalError: e,
@@ -104,11 +108,14 @@ class MagentoStoreModule {
           .map((s) => models.MagentoStore.fromJson(s as Map<String, dynamic>))
           .toList();
     } on MagentoException catch (e) {
-      print('[MagentoStore] Get stores error: ${e.toString()}');
+      MagentoLogger.error('[MagentoStore] Get stores error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoStore] Failed to get stores: ${e.toString()}');
-      print('[MagentoStore] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoStore] Failed to get stores: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Failed to get stores: ${e.toString()}',
         originalError: e,

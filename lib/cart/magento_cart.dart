@@ -1,5 +1,6 @@
 import '../core/magento_client.dart';
 import '../core/magento_exception.dart';
+import '../core/magento_logger.dart';
 import '../models/cart/cart.dart' as models;
 
 /// Cart module for Magento Storefront
@@ -42,11 +43,14 @@ class MagentoCartModule {
         isEmpty: true,
       );
     } on MagentoException catch (e) {
-      print('[MagentoCart] Create cart error: ${e.toString()}');
+      MagentoLogger.error('[MagentoCart] Create cart error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoCart] Failed to create cart: ${e.toString()}');
-      print('[MagentoCart] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoCart] Failed to create cart: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Failed to create cart: ${e.toString()}',
         originalError: e,
@@ -187,11 +191,14 @@ class MagentoCartModule {
 
       return models.MagentoCart.fromJson(cartData);
     } on MagentoException catch (e) {
-      print('[MagentoCart] Add product to cart error: ${e.toString()}');
+      MagentoLogger.error('[MagentoCart] Add product to cart error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoCart] Failed to add product to cart: ${e.toString()}');
-      print('[MagentoCart] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoCart] Failed to add product to cart: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Failed to add product to cart: ${e.toString()}',
         originalError: e,
@@ -301,11 +308,14 @@ class MagentoCartModule {
 
       return models.MagentoCart.fromJson(cartData);
     } on MagentoException catch (e) {
-      print('[MagentoCart] Get cart error: ${e.toString()}');
+      MagentoLogger.error('[MagentoCart] Get cart error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoCart] Failed to get cart: ${e.toString()}');
-      print('[MagentoCart] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoCart] Failed to get cart: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Failed to get cart: ${e.toString()}',
         originalError: e,
@@ -454,11 +464,14 @@ class MagentoCartModule {
 
       return models.MagentoCart.fromJson(cartData);
     } on MagentoException catch (e) {
-      print('[MagentoCart] Update cart item error: ${e.toString()}');
+      MagentoLogger.error('[MagentoCart] Update cart item error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoCart] Failed to update cart item: ${e.toString()}');
-      print('[MagentoCart] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoCart] Failed to update cart item: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Failed to update cart item: ${e.toString()}',
         originalError: e,
@@ -598,11 +611,14 @@ class MagentoCartModule {
 
       return models.MagentoCart.fromJson(cartData);
     } on MagentoException catch (e) {
-      print('[MagentoCart] Remove cart item error: ${e.toString()}');
+      MagentoLogger.error('[MagentoCart] Remove cart item error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoCart] Failed to remove cart item: ${e.toString()}');
-      print('[MagentoCart] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoCart] Failed to remove cart item: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Failed to remove cart item: ${e.toString()}',
         originalError: e,

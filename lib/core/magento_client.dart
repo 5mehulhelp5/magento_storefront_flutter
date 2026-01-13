@@ -4,6 +4,7 @@ import 'magento_config.dart';
 import 'magento_exception.dart';
 import 'error_mapper.dart';
 import 'graphql_interceptor.dart';
+import 'magento_logger.dart';
 
 /// Core HTTP client for Magento GraphQL API
 class MagentoClient {
@@ -58,9 +59,9 @@ class MagentoClient {
       });
 
       if (config.enableDebugLogging) {
-        print('[MagentoClient] Query: $finalQuery');
-        print('[MagentoClient] Variables: $finalVariables');
-        print('[MagentoClient] Headers: $finalHeaders');
+        MagentoLogger.debug('[MagentoClient] Query: $finalQuery');
+        MagentoLogger.debug('[MagentoClient] Variables: $finalVariables');
+        MagentoLogger.debug('[MagentoClient] Headers: $finalHeaders');
       }
 
       // Make request
@@ -81,24 +82,26 @@ class MagentoClient {
       // Check for HTTP errors
       if (response.statusCode != 200) {
         final exception = ErrorMapper.mapHttpError(response);
-        print('[MagentoClient] HTTP Error: ${exception.toString()}');
-        print('[MagentoClient] Response Status: ${response.statusCode}');
-        print('[MagentoClient] Response Body: ${response.body}');
+        MagentoLogger.error(
+          '[MagentoClient] HTTP Error: ${exception.toString()}',
+        );
+        MagentoLogger.error('[MagentoClient] Response Status: ${response.statusCode}');
+        MagentoLogger.error('[MagentoClient] Response Body: ${response.body}');
         throw exception;
       }
 
       // Check for GraphQL errors
       if (finalResponse.containsKey('errors')) {
         final exception = ErrorMapper.mapGraphQLError(finalResponse);
-        print('[MagentoClient] GraphQL Error: ${exception.toString()}');
+        MagentoLogger.error('[MagentoClient] GraphQL Error: ${exception.toString()}');
         if (exception.errors != null) {
           for (var error in exception.errors!) {
-            print('[MagentoClient] GraphQL Error Detail: ${error.message}');
+            MagentoLogger.error('[MagentoClient] GraphQL Error Detail: ${error.message}');
             if (error.locations != null) {
-              print('[MagentoClient] Error Locations: ${error.locations}');
+              MagentoLogger.error('[MagentoClient] Error Locations: ${error.locations}');
             }
             if (error.path != null) {
-              print('[MagentoClient] Error Path: ${error.path}');
+              MagentoLogger.error('[MagentoClient] Error Path: ${error.path}');
             }
           }
         }
@@ -109,21 +112,27 @@ class MagentoClient {
       return finalResponse;
     } on http.ClientException catch (e) {
       final exception = ErrorMapper.mapNetworkException(e);
-      print('[MagentoClient] Network Exception: ${exception.toString()}');
-      print('[MagentoClient] Original Error: ${e.toString()}');
+      MagentoLogger.error(
+        '[MagentoClient] Network Exception: ${exception.toString()}',
+        e,
+      );
+      MagentoLogger.error('[MagentoClient] Original Error: ${e.toString()}');
       interceptor?.onError(exception);
       throw exception;
     } on MagentoException catch (e) {
-      print('[MagentoClient] MagentoException: ${e.toString()}');
+      MagentoLogger.error('[MagentoClient] MagentoException: ${e.toString()}', e);
       if (e.originalError != null) {
-        print('[MagentoClient] Original Error: ${e.originalError}');
+        MagentoLogger.error('[MagentoClient] Original Error: ${e.originalError}');
       }
       rethrow;
     } catch (e, stackTrace) {
       final exception = ErrorMapper.mapNetworkException(e);
-      print('[MagentoClient] Unexpected Error: ${exception.toString()}');
-      print('[MagentoClient] Original Error: ${e.toString()}');
-      print('[MagentoClient] Stack Trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoClient] Unexpected Error: ${exception.toString()}',
+        e,
+        stackTrace,
+      );
+      MagentoLogger.error('[MagentoClient] Original Error: ${e.toString()}');
       interceptor?.onError(exception);
       throw exception;
     }

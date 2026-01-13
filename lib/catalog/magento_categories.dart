@@ -1,5 +1,6 @@
 import '../core/magento_client.dart';
 import '../core/magento_exception.dart';
+import '../core/magento_logger.dart';
 import '../models/category/category.dart';
 
 /// Categories module for Magento Storefront
@@ -64,11 +65,14 @@ class MagentoCategories {
 
       return MagentoCategory.fromJson(categoryData);
     } on MagentoException catch (e) {
-      print('[MagentoCategories] Get category by ID error: ${e.toString()}');
+      MagentoLogger.error('[MagentoCategories] Get category by ID error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoCategories] Failed to get category: ${e.toString()}');
-      print('[MagentoCategories] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoCategories] Failed to get category: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Failed to get category: ${e.toString()}',
         originalError: e,
@@ -144,11 +148,14 @@ class MagentoCategories {
           .map((c) => MagentoCategory.fromJson(c as Map<String, dynamic>))
           .toList();
     } on MagentoException catch (e) {
-      print('[MagentoCategories] Get category tree error: ${e.toString()}');
+      MagentoLogger.error('[MagentoCategories] Get category tree error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoCategories] Failed to get category tree: ${e.toString()}');
-      print('[MagentoCategories] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoCategories] Failed to get category tree: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Failed to get category tree: ${e.toString()}',
         originalError: e,

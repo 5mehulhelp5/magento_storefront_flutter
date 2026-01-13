@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'magento_exception.dart';
+import 'magento_logger.dart';
 
 /// Maps HTTP and GraphQL errors to Magento exceptions
 class ErrorMapper {
@@ -8,8 +9,8 @@ class ErrorMapper {
     final statusCode = response.statusCode;
     final body = response.body;
 
-    print('[ErrorMapper] Mapping HTTP error: Status $statusCode');
-    print('[ErrorMapper] Response body: $body');
+    MagentoLogger.warning('[ErrorMapper] Mapping HTTP error: Status $statusCode');
+    MagentoLogger.debug('[ErrorMapper] Response body: $body');
 
     if (statusCode == 401 || statusCode == 403) {
       final exception = MagentoAuthenticationException(
@@ -17,7 +18,7 @@ class ErrorMapper {
         code: statusCode.toString(),
         originalError: body,
       );
-      print('[ErrorMapper] Authentication error: ${exception.toString()}');
+      MagentoLogger.error('[ErrorMapper] Authentication error: ${exception.toString()}');
       return exception;
     }
 
@@ -27,7 +28,7 @@ class ErrorMapper {
         code: statusCode.toString(),
         originalError: body,
       );
-      print('[ErrorMapper] Server error: ${exception.toString()}');
+      MagentoLogger.error('[ErrorMapper] Server error: ${exception.toString()}');
       return exception;
     }
 
@@ -36,7 +37,7 @@ class ErrorMapper {
       code: statusCode.toString(),
       originalError: body,
     );
-    print('[ErrorMapper] Request failed: ${exception.toString()}');
+    MagentoLogger.error('[ErrorMapper] Request failed: ${exception.toString()}');
     return exception;
   }
 
@@ -46,15 +47,15 @@ class ErrorMapper {
   ) {
     final errors = response['errors'] as List<dynamic>?;
     
-    print('[ErrorMapper] Mapping GraphQL error');
-    print('[ErrorMapper] Response: $response');
+    MagentoLogger.warning('[ErrorMapper] Mapping GraphQL error');
+    MagentoLogger.debug('[ErrorMapper] Response: $response');
     
     if (errors == null || errors.isEmpty) {
       final exception = MagentoGraphQLException(
         'Unknown GraphQL error',
         originalError: response,
       );
-      print('[ErrorMapper] Unknown GraphQL error: ${exception.toString()}');
+      MagentoLogger.error('[ErrorMapper] Unknown GraphQL error: ${exception.toString()}');
       return exception;
     }
 
@@ -64,17 +65,17 @@ class ErrorMapper {
 
     final errorMessages = graphQLErrors.map((e) => e.message).join(', ');
 
-    print('[ErrorMapper] GraphQL errors found: ${graphQLErrors.length}');
+    MagentoLogger.warning('[ErrorMapper] GraphQL errors found: ${graphQLErrors.length}');
     for (var error in graphQLErrors) {
-      print('[ErrorMapper] GraphQL Error: ${error.message}');
+      MagentoLogger.error('[ErrorMapper] GraphQL Error: ${error.message}');
       if (error.locations != null && error.locations!.isNotEmpty) {
-        print('[ErrorMapper]   Locations: ${error.locations!.map((l) => l.toString()).join(', ')}');
+        MagentoLogger.error('[ErrorMapper]   Locations: ${error.locations!.map((l) => l.toString()).join(', ')}');
       }
       if (error.path != null && error.path!.isNotEmpty) {
-        print('[ErrorMapper]   Path: ${error.path!.join(' -> ')}');
+        MagentoLogger.error('[ErrorMapper]   Path: ${error.path!.join(' -> ')}');
       }
       if (error.extensions != null) {
-        print('[ErrorMapper]   Extensions: ${error.extensions}');
+        MagentoLogger.error('[ErrorMapper]   Extensions: ${error.extensions}');
       }
     }
 
@@ -83,20 +84,20 @@ class ErrorMapper {
       errors: graphQLErrors,
       originalError: response,
     );
-    print('[ErrorMapper] GraphQL exception: ${exception.toString()}');
+    MagentoLogger.error('[ErrorMapper] GraphQL exception: ${exception.toString()}');
     return exception;
   }
 
   /// Map network exceptions (timeout, connection errors, etc.)
   static MagentoNetworkException mapNetworkException(dynamic error) {
-    print('[ErrorMapper] Mapping network exception: ${error.toString()}');
+    MagentoLogger.warning('[ErrorMapper] Mapping network exception: ${error.toString()}');
     
     if (error is http.ClientException) {
       final exception = MagentoNetworkException(
         'Network error: ${error.message}',
         originalError: error,
       );
-      print('[ErrorMapper] ClientException: ${exception.toString()}');
+      MagentoLogger.error('[ErrorMapper] ClientException: ${exception.toString()}', error);
       return exception;
     }
 
@@ -104,7 +105,7 @@ class ErrorMapper {
       'Network error: ${error.toString()}',
       originalError: error,
     );
-    print('[ErrorMapper] Network exception: ${exception.toString()}');
+    MagentoLogger.error('[ErrorMapper] Network exception: ${exception.toString()}', error);
     return exception;
   }
 }

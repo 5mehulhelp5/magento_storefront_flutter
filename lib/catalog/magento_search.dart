@@ -1,5 +1,6 @@
 import '../core/magento_client.dart';
 import '../core/magento_exception.dart';
+import '../core/magento_logger.dart';
 import '../models/product/product.dart';
 import 'magento_products.dart';
 
@@ -133,11 +134,14 @@ class MagentoSearch {
         totalPages: pageInfo?['total_pages'] as int? ?? 0,
       );
     } on MagentoException catch (e) {
-      print('[MagentoSearch] Search products error: ${e.toString()}');
+      MagentoLogger.error('[MagentoSearch] Search products error: ${e.toString()}', e);
       rethrow;
     } catch (e, stackTrace) {
-      print('[MagentoSearch] Failed to search products: ${e.toString()}');
-      print('[MagentoSearch] Stack trace: $stackTrace');
+      MagentoLogger.error(
+        '[MagentoSearch] Failed to search products: ${e.toString()}',
+        e,
+        stackTrace,
+      );
       throw MagentoException(
         'Failed to search products: ${e.toString()}',
         originalError: e,
