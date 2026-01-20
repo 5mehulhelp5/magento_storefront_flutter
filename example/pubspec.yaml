@@ -13,6 +13,7 @@ dependencies:
   magento_storefront_flutter:
     path: ../
   cupertino_icons: ^1.0.8
+  hive_flutter: ^1.1.0
 
 dev_dependencies:
   flutter_test:

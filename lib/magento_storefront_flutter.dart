@@ -5,6 +5,7 @@ export 'core/magento_exception.dart';
 export 'core/graphql_interceptor.dart';
 export 'core/error_mapper.dart';
 export 'core/magento_logger.dart';
+export 'core/magento_storage.dart';
 
 // Auth exports
 export 'auth/magento_auth.dart';

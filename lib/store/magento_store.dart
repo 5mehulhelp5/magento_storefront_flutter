@@ -1,6 +1,7 @@
 import '../core/magento_client.dart';
 import '../core/magento_exception.dart';
 import '../core/magento_logger.dart';
+import '../core/magento_storage.dart';
 import '../models/store/store.dart' as models;
 
 /// Store module for Magento Storefront
@@ -49,7 +50,16 @@ class MagentoStoreModule {
         throw MagentoException('Store config not found');
       }
 
-      return models.MagentoStoreConfig.fromJson(storeConfigData);
+      final storeConfig = models.MagentoStoreConfig.fromJson(storeConfigData);
+      
+      // Save store config to storage
+      try {
+        await MagentoStorage.instance.saveStoreConfig(storeConfig);
+      } catch (e) {
+        // Storage might not be initialized, ignore silently
+      }
+
+      return storeConfig;
     } on MagentoException catch (e) {
       MagentoLogger.error('[MagentoStore] Get store config error: ${e.toString()}', e);
       rethrow;
@@ -120,6 +130,22 @@ class MagentoStoreModule {
         'Failed to get stores: ${e.toString()}',
         originalError: e,
       );
+    }
+  }
+
+  /// Load store configuration from storage
+  /// 
+  /// Returns the saved store configuration if available, null otherwise.
+  /// 
+  /// Example:
+  /// ```dart
+  /// final cachedConfig = await MagentoStoreModule.loadStoreConfigFromStorage();
+  /// ```
+  static models.MagentoStoreConfig? loadStoreConfigFromStorage() {
+    try {
+      return MagentoStorage.instance.loadStoreConfig();
+    } catch (e) {
+      return null;
     }
   }
 }

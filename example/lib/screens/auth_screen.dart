@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:magento_storefront_flutter/magento_storefront_flutter.dart';
 import '../services/magento_service.dart';
+import '../services/cart_service.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -14,8 +15,8 @@ class _AuthScreenState extends State<AuthScreen> {
   final _registerFormKey = GlobalKey<FormState>();
   final _forgotPasswordFormKey = GlobalKey<FormState>();
 
-  final _loginEmailController = TextEditingController();
-  final _loginPasswordController = TextEditingController();
+  final _loginEmailController = TextEditingController(text: 'bytesqa@bytestechnolab.comw');
+  final _loginPasswordController = TextEditingController(text: 'Test@123');
 
   final _registerEmailController = TextEditingController();
   final _registerPasswordController = TextEditingController();
@@ -53,16 +54,18 @@ class _AuthScreenState extends State<AuthScreen> {
         throw Exception('SDK not initialized');
       }
 
-      final result = await sdk.auth.login(
-        _loginEmailController.text.trim(),
-        _loginPasswordController.text,
-      );
+      final result = await sdk.auth.login(_loginEmailController.text.trim(), _loginPasswordController.text);
+
+      // After successful login, update cart service with the new customer cart ID
+      await CartService.loadCartIdFromStorage();
+
+      // Refresh cart to load the merged cart
+      await CartService.refreshCart();
 
       setState(() {
-        final tokenPreview = result.token.length > 20
-            ? '${result.token.substring(0, 20)}...'
-            : result.token;
-        _authStatus = 'Login successful! Token: $tokenPreview';
+        final tokenPreview = result.token.length > 20 ? '${result.token.substring(0, 20)}...' : result.token;
+        final cartInfo = result.customerCartId != null ? ' (Cart ID: ${result.customerCartId!.substring(0, 10)}...)' : '';
+        _authStatus = 'Login successful! Token: $tokenPreview$cartInfo';
       });
     } on MagentoAuthenticationException catch (e) {
       setState(() {
@@ -100,11 +103,16 @@ class _AuthScreenState extends State<AuthScreen> {
         lastName: _registerLastNameController.text.trim(),
       );
 
+      // After successful registration (which includes login), update cart service
+      await CartService.loadCartIdFromStorage();
+
+      // Refresh cart to load the merged cart
+      await CartService.refreshCart();
+
       setState(() {
-        final tokenPreview = result.token.length > 20
-            ? '${result.token.substring(0, 20)}...'
-            : result.token;
-        _authStatus = 'Registration successful! Token: $tokenPreview';
+        final tokenPreview = result.token.length > 20 ? '${result.token.substring(0, 20)}...' : result.token;
+        final cartInfo = result.customerCartId != null ? ' (Cart ID: ${result.customerCartId!.substring(0, 10)}...)' : '';
+        _authStatus = 'Registration successful! Token: $tokenPreview$cartInfo';
       });
     } on MagentoAuthenticationException catch (e) {
       setState(() {
@@ -187,40 +195,23 @@ class _AuthScreenState extends State<AuthScreen> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
-                color:
-                    _authStatus!.contains('successful') ||
-                        _authStatus!.contains('sent')
-                    ? Colors.green.shade100
-                    : Colors.red.shade100,
+                color: _authStatus!.contains('successful') || _authStatus!.contains('sent') ? Colors.green.shade100 : Colors.red.shade100,
                 child: Text(
                   _authStatus!,
                   style: TextStyle(
-                    color:
-                        _authStatus!.contains('successful') ||
-                            _authStatus!.contains('sent')
+                    color: _authStatus!.contains('successful') || _authStatus!.contains('sent')
                         ? Colors.green.shade900
                         : Colors.red.shade900,
                   ),
                 ),
               ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  _buildLoginTab(),
-                  _buildRegisterTab(),
-                  _buildForgotPasswordTab(),
-                ],
-              ),
-            ),
+            Expanded(child: TabBarView(children: [_buildLoginTab(), _buildRegisterTab(), _buildForgotPasswordTab()])),
             if (MagentoService.sdk?.auth.isAuthenticated == true)
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: ElevatedButton(
                   onPressed: _logout,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                  ),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
                   child: const Text('Logout'),
                 ),
               ),
@@ -240,11 +231,7 @@ class _AuthScreenState extends State<AuthScreen> {
           children: [
             TextFormField(
               controller: _loginEmailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email),
-              ),
+              decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)),
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -259,11 +246,7 @@ class _AuthScreenState extends State<AuthScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _loginPasswordController,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.lock),
-              ),
+              decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder(), prefixIcon: Icon(Icons.lock)),
               obscureText: true,
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -276,11 +259,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ElevatedButton(
               onPressed: _isLoading ? null : _login,
               child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Text('Login'),
             ),
           ],
@@ -299,11 +278,7 @@ class _AuthScreenState extends State<AuthScreen> {
           children: [
             TextFormField(
               controller: _registerEmailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email),
-              ),
+              decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)),
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -318,11 +293,7 @@ class _AuthScreenState extends State<AuthScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _registerPasswordController,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.lock),
-              ),
+              decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder(), prefixIcon: Icon(Icons.lock)),
               obscureText: true,
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -337,11 +308,7 @@ class _AuthScreenState extends State<AuthScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _registerFirstNameController,
-              decoration: const InputDecoration(
-                labelText: 'First Name',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person),
-              ),
+              decoration: const InputDecoration(labelText: 'First Name', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Please enter your first name';
@@ -368,11 +335,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ElevatedButton(
               onPressed: _isLoading ? null : _register,
               child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Text('Register'),
             ),
           ],
@@ -391,11 +354,7 @@ class _AuthScreenState extends State<AuthScreen> {
           children: [
             TextFormField(
               controller: _forgotPasswordEmailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email),
-              ),
+              decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)),
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -411,11 +370,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ElevatedButton(
               onPressed: _isLoading ? null : _forgotPassword,
               child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Text('Send Reset Email'),
             ),
           ],

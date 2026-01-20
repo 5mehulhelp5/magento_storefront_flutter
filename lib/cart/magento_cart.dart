@@ -1,6 +1,7 @@
 import '../core/magento_client.dart';
 import '../core/magento_exception.dart';
 import '../core/magento_logger.dart';
+import '../core/magento_storage.dart';
 import '../models/cart/cart.dart' as models;
 
 /// Cart module for Magento Storefront
@@ -10,7 +11,7 @@ class MagentoCartModule {
   MagentoCartModule(this._client);
 
   /// Create a new cart
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final cart = await MagentoCartModule.createCart();
@@ -35,6 +36,16 @@ class MagentoCartModule {
         throw MagentoException('Failed to create cart');
       }
 
+      // Save cart ID to storage (only if user is not authenticated)
+      try {
+        final isAuthenticated = _client.authToken != null;
+        if (!isAuthenticated) {
+          await MagentoStorage.instance.saveCurrentCartId(cartId);
+        }
+      } catch (e) {
+        // Storage might not be initialized, ignore silently
+      }
+
       // Return cart with the new ID
       return models.MagentoCart(
         id: cartId,
@@ -43,7 +54,10 @@ class MagentoCartModule {
         isEmpty: true,
       );
     } on MagentoException catch (e) {
-      MagentoLogger.error('[MagentoCart] Create cart error: ${e.toString()}', e);
+      MagentoLogger.error(
+        '[MagentoCart] Create cart error: ${e.toString()}',
+        e,
+      );
       rethrow;
     } catch (e, stackTrace) {
       MagentoLogger.error(
@@ -59,7 +73,7 @@ class MagentoCartModule {
   }
 
   /// Add product to cart
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final cart = await MagentoCartModule.addProductToCart(
@@ -179,7 +193,8 @@ class MagentoCartModule {
         throw MagentoException('Invalid response from server');
       }
 
-      final addProductsData = data['addProductsToCart'] as Map<String, dynamic>?;
+      final addProductsData =
+          data['addProductsToCart'] as Map<String, dynamic>?;
       if (addProductsData == null) {
         throw MagentoException('Failed to add product to cart');
       }
@@ -189,9 +204,24 @@ class MagentoCartModule {
         throw MagentoException('Cart data not found in response');
       }
 
-      return models.MagentoCart.fromJson(cartData);
+      final updatedCart = models.MagentoCart.fromJson(cartData);
+
+      // Save cart ID to storage (only if user is not authenticated)
+      try {
+        final isAuthenticated = _client.authToken != null;
+        if (!isAuthenticated) {
+          await MagentoStorage.instance.saveCurrentCartId(cartId);
+        }
+      } catch (e) {
+        // Storage might not be initialized, ignore silently
+      }
+
+      return updatedCart;
     } on MagentoException catch (e) {
-      MagentoLogger.error('[MagentoCart] Add product to cart error: ${e.toString()}', e);
+      MagentoLogger.error(
+        '[MagentoCart] Add product to cart error: ${e.toString()}',
+        e,
+      );
       rethrow;
     } catch (e, stackTrace) {
       MagentoLogger.error(
@@ -207,7 +237,7 @@ class MagentoCartModule {
   }
 
   /// Get cart by ID
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final cart = await MagentoCartModule.getCart('cart-id');
@@ -324,7 +354,7 @@ class MagentoCartModule {
   }
 
   /// Update cart item quantity
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final cart = await MagentoCartModule.updateCartItem(
@@ -464,7 +494,10 @@ class MagentoCartModule {
 
       return models.MagentoCart.fromJson(cartData);
     } on MagentoException catch (e) {
-      MagentoLogger.error('[MagentoCart] Update cart item error: ${e.toString()}', e);
+      MagentoLogger.error(
+        '[MagentoCart] Update cart item error: ${e.toString()}',
+        e,
+      );
       rethrow;
     } catch (e, stackTrace) {
       MagentoLogger.error(
@@ -480,7 +513,7 @@ class MagentoCartModule {
   }
 
   /// Remove item from cart
-  /// 
+  ///
   /// Example:
   /// ```dart
   /// final cart = await MagentoCartModule.removeCartItem(
@@ -588,10 +621,7 @@ class MagentoCartModule {
     try {
       final response = await _client.mutate(
         query,
-        variables: {
-          'cartId': cartId,
-          'itemId': itemIdInt,
-        },
+        variables: {'cartId': cartId, 'itemId': itemIdInt},
       );
 
       final data = response['data'] as Map<String, dynamic>?;
@@ -599,7 +629,8 @@ class MagentoCartModule {
         throw MagentoException('Invalid response from server');
       }
 
-      final removeItemData = data['removeItemFromCart'] as Map<String, dynamic>?;
+      final removeItemData =
+          data['removeItemFromCart'] as Map<String, dynamic>?;
       if (removeItemData == null) {
         throw MagentoException('Failed to remove cart item');
       }
@@ -611,7 +642,10 @@ class MagentoCartModule {
 
       return models.MagentoCart.fromJson(cartData);
     } on MagentoException catch (e) {
-      MagentoLogger.error('[MagentoCart] Remove cart item error: ${e.toString()}', e);
+      MagentoLogger.error(
+        '[MagentoCart] Remove cart item error: ${e.toString()}',
+        e,
+      );
       rethrow;
     } catch (e, stackTrace) {
       MagentoLogger.error(
@@ -621,6 +655,134 @@ class MagentoCartModule {
       );
       throw MagentoException(
         'Failed to remove cart item: ${e.toString()}',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Merge items from source cart into destination cart
+  ///
+  /// This method retrieves items from the source cart and adds them to the destination cart.
+  /// If an item with the same SKU already exists in the destination cart, the quantities are combined.
+  ///
+  /// Note: This method requires access to the source cart. If the source cart is a guest cart
+  /// and the user is now authenticated, use [mergeCartItems] instead.
+  ///
+  /// Example:
+  /// ```dart
+  /// final mergedCart = await MagentoCartModule.mergeCarts(
+  ///   sourceCartId: 'guest-cart-id',
+  ///   destinationCartId: 'customer-cart-id',
+  /// );
+  /// ```
+  Future<models.MagentoCart> mergeCarts({
+    required String sourceCartId,
+    required String destinationCartId,
+  }) async {
+    try {
+      // Get source cart items
+      final sourceCart = await getCart(sourceCartId);
+      if (sourceCart == null || sourceCart.items.isEmpty) {
+        // No items to merge, return destination cart
+        final destCart = await getCart(destinationCartId);
+        if (destCart == null) {
+          throw MagentoException('Destination cart not found');
+        }
+        return destCart;
+      }
+
+      // Use the items to merge
+      return await mergeCartItems(
+        cartItems: sourceCart.items,
+        destinationCartId: destinationCartId,
+      );
+    } on MagentoException catch (e) {
+      MagentoLogger.error(
+        '[MagentoCart] Merge carts error: ${e.toString()}',
+        e,
+      );
+      rethrow;
+    } catch (e, stackTrace) {
+      MagentoLogger.error(
+        '[MagentoCart] Failed to merge carts: ${e.toString()}',
+        e,
+        stackTrace,
+      );
+      throw MagentoException(
+        'Failed to merge carts: ${e.toString()}',
+        originalError: e,
+      );
+    }
+  }
+
+  /// Merge cart items directly into destination cart
+  ///
+  /// This method adds the provided cart items to the destination cart.
+  /// If an item with the same SKU already exists in the destination cart, the quantities are combined.
+  ///
+  /// This is useful when you already have the cart items (e.g., from a guest cart retrieved before login)
+  /// and want to merge them after authentication without needing to access the source cart again.
+  ///
+  /// Example:
+  /// ```dart
+  /// final mergedCart = await MagentoCartModule.mergeCartItems(
+  ///   cartItems: guestCart.items,
+  ///   destinationCartId: 'customer-cart-id',
+  /// );
+  /// ```
+  Future<models.MagentoCart> mergeCartItems({
+    required List<models.MagentoCartItem> cartItems,
+    required String destinationCartId,
+  }) async {
+    try {
+      if (cartItems.isEmpty) {
+        // No items to merge, return destination cart
+        final destCart = await getCart(destinationCartId);
+        if (destCart == null) {
+          throw MagentoException('Destination cart not found');
+        }
+        return destCart;
+      }
+
+      // Add each item to destination cart
+      // Magento will automatically combine quantities for items with the same SKU
+      for (final item in cartItems) {
+        try {
+          await addProductToCart(
+            cartId: destinationCartId,
+            sku: item.product.sku,
+            quantity: item.quantity,
+          );
+        } catch (e) {
+          // Log error but continue with other items
+          MagentoLogger.error(
+            '[MagentoCart] Failed to merge item ${item.product.sku}: ${e.toString()}',
+            e,
+          );
+        }
+      }
+
+      // Return the updated destination cart
+      final mergedCart = await getCart(destinationCartId);
+      if (mergedCart == null) {
+        throw MagentoException('Failed to retrieve merged cart');
+      }
+
+      return mergedCart;
+    } on MagentoException catch (e) {
+      MagentoLogger.error(
+        '[MagentoCart] Merge cart items error: ${e.toString()}',
+        e,
+      );
+      rethrow;
+    } catch (e, stackTrace) {
+      MagentoLogger.error(
+        '[MagentoCart] Failed to merge cart items: ${e.toString()}',
+        e,
+        stackTrace,
+      );
+      throw MagentoException(
+        'Failed to merge cart items: ${e.toString()}',
         originalError: e,
       );
     }

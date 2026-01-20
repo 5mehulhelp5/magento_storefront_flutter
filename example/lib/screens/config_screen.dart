@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:magento_storefront_flutter/magento_storefront_flutter.dart';
 import '../services/magento_service.dart';
 import 'home_screen.dart';
 
@@ -11,9 +12,28 @@ class ConfigScreen extends StatefulWidget {
 
 class _ConfigScreenState extends State<ConfigScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _baseUrlController = TextEditingController(text: 'https://ideaoman.bytestechnolab.net/graphql');
-  final _storeCodeController = TextEditingController(text: 'default');
+  final _baseUrlController = TextEditingController();
+  final _storeCodeController = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedConfig();
+  }
+
+  void _loadSavedConfig() {
+    // Try to load saved config from storage
+    final savedConfig = MagentoSDK.loadConfigFromStorage();
+    if (savedConfig != null) {
+      _baseUrlController.text = savedConfig.baseUrl;
+      _storeCodeController.text = savedConfig.storeCode ?? 'default';
+    } else {
+      // Default values if no saved config
+      _baseUrlController.text = 'https://ideaoman.bytestechnolab.net/graphql';
+      _storeCodeController.text = 'default';
+    }
+  }
 
   @override
   void dispose() {

@@ -2,6 +2,7 @@ import 'package:http/http.dart' as http;
 import 'core/magento_client.dart';
 import 'core/magento_config.dart';
 import 'core/graphql_interceptor.dart';
+import 'core/magento_storage.dart';
 import 'auth/magento_auth.dart';
 import 'store/magento_store.dart';
 import 'catalog/magento_categories.dart';
@@ -52,27 +53,67 @@ class MagentoSDK {
   /// [config] - Configuration for the Magento store
   /// [interceptor] - Optional GraphQL interceptor for request/response modification
   /// [httpClient] - Optional custom HTTP client (useful for testing)
+  /// [useStorage] - Whether to use local storage for persistence (default: true)
   MagentoSDK({
     required this.config,
     GraphQLInterceptor? interceptor,
     http.Client? httpClient,
+    bool useStorage = true,
   }) : _client = MagentoClient(
           config: config,
           interceptor: interceptor,
           httpClient: httpClient,
         ) {
+    // Save config to storage if enabled
+    if (useStorage) {
+      _saveConfig();
+      _loadAuthToken();
+    }
+    
     // Initialize modules
-    auth = MagentoAuth(_client);
+    cart = MagentoCartModule(_client);
+    auth = MagentoAuth(_client, cart);
     store = MagentoStoreModule(_client);
     categories = MagentoCategories(_client);
     products = MagentoProducts(_client);
     search = MagentoSearch(_client);
-    cart = MagentoCartModule(_client);
     custom = MagentoCustomQuery(_client);
+  }
+
+  /// Save configuration to storage
+  Future<void> _saveConfig() async {
+    try {
+      await MagentoStorage.instance.saveConfig(config);
+    } catch (e) {
+      // Storage might not be initialized, ignore silently
+    }
+  }
+
+  /// Load authentication token from storage
+  void _loadAuthToken() {
+    try {
+      final token = MagentoStorage.instance.loadAuthToken();
+      if (token != null) {
+        _client.setAuthToken(token);
+      }
+    } catch (e) {
+      // Storage might not be initialized, ignore silently
+    }
   }
 
   /// Get the underlying client (for advanced use cases)
   MagentoClient get client => _client;
+
+  /// Load configuration from storage
+  /// 
+  /// Returns the saved configuration if available, null otherwise.
+  static MagentoConfig? loadConfigFromStorage() {
+    try {
+      return MagentoStorage.instance.loadConfig();
+    } catch (e) {
+      return null;
+    }
+  }
 
   /// Dispose resources
   void dispose() {

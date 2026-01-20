@@ -15,10 +15,47 @@ class CartService {
   /// Get cart item count
   static int get itemCount => _currentCart?.totalQuantity ?? 0;
 
+  /// Load cart ID from storage
+  /// This should be called after login to update the cart ID
+  static Future<void> loadCartIdFromStorage() async {
+    try {
+      // Try to load customer cart ID first (if authenticated)
+      final customerCartId = MagentoStorage.instance.loadCustomerCartId();
+      if (customerCartId != null && customerCartId.isNotEmpty) {
+        _cartId = customerCartId;
+        return;
+      }
+
+      // Fallback to current cart ID
+      final currentCartId = MagentoStorage.instance.loadCurrentCartId();
+      if (currentCartId != null && currentCartId.isNotEmpty) {
+        _cartId = currentCartId;
+        return;
+      }
+    } catch (e) {
+      // Storage might not be initialized, ignore
+    }
+  }
+
   /// Initialize or get cart
   static Future<String> getOrCreateCart() async {
+    // First, try to load cart ID from storage
+    await loadCartIdFromStorage();
+
     if (_cartId != null && _cartId!.isNotEmpty) {
-      return _cartId!;
+      // Verify the cart still exists
+      try {
+        final sdk = MagentoService.sdk;
+        if (sdk != null) {
+          final cart = await sdk.cart.getCart(_cartId!);
+          _currentCart = cart;
+          return _cartId!;
+        }
+      } catch (e) {
+        // Cart doesn't exist or can't be accessed, create a new one
+        _cartId = null;
+        _currentCart = null;
+      }
     }
 
     final sdk = MagentoService.sdk;
@@ -29,6 +66,17 @@ class CartService {
     final cart = await sdk.cart.createCart();
     _cartId = cart.id;
     _currentCart = cart;
+
+    // Save to storage if not authenticated
+    try {
+      final isAuthenticated = sdk.auth.isAuthenticated;
+      if (!isAuthenticated) {
+        await MagentoStorage.instance.saveCurrentCartId(cart.id);
+      }
+    } catch (e) {
+      // Storage might not be initialized, ignore
+    }
+
     return _cartId!;
   }
 
@@ -55,6 +103,9 @@ class CartService {
 
   /// Refresh cart
   static Future<void> refreshCart() async {
+    // First, try to load cart ID from storage (in case it was updated after login)
+    await loadCartIdFromStorage();
+
     if (_cartId == null || _cartId!.isEmpty) {
       return;
     }
@@ -70,9 +121,14 @@ class CartService {
     } catch (e, stackTrace) {
       print('[CartService] Error refreshing cart: ${e.toString()}');
       print('[CartService] Stack trace: $stackTrace');
-      // Cart might have been deleted, reset
-      _cartId = null;
-      _currentCart = null;
+      // Cart might have been deleted or is inaccessible, try to load from storage
+      await loadCartIdFromStorage();
+      
+      // If still no cart ID, reset
+      if (_cartId == null || _cartId!.isEmpty) {
+        _cartId = null;
+        _currentCart = null;
+      }
     }
   }
 
