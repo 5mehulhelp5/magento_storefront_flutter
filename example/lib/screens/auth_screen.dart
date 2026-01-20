@@ -54,18 +54,17 @@ class _AuthScreenState extends State<AuthScreen> {
         throw Exception('SDK not initialized');
       }
 
+      // Ensure the SDK knows the guest cart before login, so merge works.
+      await CartService.prepareGuestCartForLogin();
+
       final result = await sdk.auth.login(_loginEmailController.text.trim(), _loginPasswordController.text);
 
-      // After successful login, update cart service with the new customer cart ID
-      await CartService.loadCartIdFromStorage();
-
-      // Refresh cart to load the merged cart
-      await CartService.refreshCart();
+      // Switch app state to customer cart and clear stale guest/current cart ids.
+      await CartService.syncAfterLogin();
 
       setState(() {
         final tokenPreview = result.token.length > 20 ? '${result.token.substring(0, 20)}...' : result.token;
-        final cartInfo = result.customerCartId != null ? ' (Cart ID: ${result.customerCartId!.substring(0, 10)}...)' : '';
-        _authStatus = 'Login successful! Token: $tokenPreview$cartInfo';
+        _authStatus = 'Login successful! Token: $tokenPreview';
       });
     } on MagentoAuthenticationException catch (e) {
       setState(() {
@@ -96,6 +95,9 @@ class _AuthScreenState extends State<AuthScreen> {
         throw Exception('SDK not initialized');
       }
 
+      // Ensure the SDK knows the guest cart before registration/login, so merge works.
+      await CartService.prepareGuestCartForLogin();
+
       final result = await sdk.auth.register(
         email: _registerEmailController.text.trim(),
         password: _registerPasswordController.text,
@@ -103,16 +105,12 @@ class _AuthScreenState extends State<AuthScreen> {
         lastName: _registerLastNameController.text.trim(),
       );
 
-      // After successful registration (which includes login), update cart service
-      await CartService.loadCartIdFromStorage();
-
-      // Refresh cart to load the merged cart
-      await CartService.refreshCart();
+      // Switch app state to customer cart and clear stale guest/current cart ids.
+      await CartService.syncAfterLogin();
 
       setState(() {
         final tokenPreview = result.token.length > 20 ? '${result.token.substring(0, 20)}...' : result.token;
-        final cartInfo = result.customerCartId != null ? ' (Cart ID: ${result.customerCartId!.substring(0, 10)}...)' : '';
-        _authStatus = 'Registration successful! Token: $tokenPreview$cartInfo';
+        _authStatus = 'Registration successful! Token: $tokenPreview';
       });
     } on MagentoAuthenticationException catch (e) {
       setState(() {

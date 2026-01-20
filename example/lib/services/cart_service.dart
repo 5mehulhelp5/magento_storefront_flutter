@@ -19,21 +19,52 @@ class CartService {
   /// This should be called after login to update the cart ID
   static Future<void> loadCartIdFromStorage() async {
     try {
-      // Try to load customer cart ID first (if authenticated)
-      final customerCartId = MagentoStorage.instance.loadCustomerCartId();
-      if (customerCartId != null && customerCartId.isNotEmpty) {
-        _cartId = customerCartId;
+      final sdk = MagentoService.sdk;
+      final isAuthenticated = sdk?.auth.isAuthenticated == true;
+
+      // If authenticated, NEVER fall back to guest/current cart id (that causes 403)
+      if (isAuthenticated) {
+        final customerCartId = MagentoStorage.instance.loadCustomerCartId();
+        if (customerCartId != null && customerCartId.isNotEmpty) {
+          _cartId = customerCartId;
+        }
         return;
       }
 
-      // Fallback to current cart ID
+      // Guest mode: use current cart id
       final currentCartId = MagentoStorage.instance.loadCurrentCartId();
       if (currentCartId != null && currentCartId.isNotEmpty) {
         _cartId = currentCartId;
-        return;
       }
     } catch (e) {
       // Storage might not be initialized, ignore
+    }
+  }
+
+  /// Ensure the SDK is aware of the guest cart **before** login.
+  ///
+  /// This is critical because the SDK merges carts based on its internal
+  /// `sdk.cart.guestCartId`, which is set when calling `createCart()`/`getCart()`
+  /// while unauthenticated.
+  static Future<void> prepareGuestCartForLogin() async {
+    final sdk = MagentoService.sdk;
+    if (sdk == null) throw Exception('SDK not initialized');
+    if (sdk.auth.isAuthenticated) return;
+
+    // Make sure we have a guest cart id and the SDK has touched it (getCart sets guestCartId internally)
+    final cartId = await getOrCreateCart();
+    try {
+      await sdk.cart.getCart(cartId);
+    } catch (_) {
+      // Ignore; if cart is invalid it will be recreated by getOrCreateCart() on next call.
+    }
+
+    // Persist guest/current cart id for app-side tracking
+    try {
+      await MagentoStorage.instance.saveCurrentCartId(cartId);
+      await MagentoStorage.instance.saveGuestCartId(cartId);
+    } catch (_) {
+      // ignore
     }
   }
 
@@ -63,15 +94,36 @@ class CartService {
       throw Exception('SDK not initialized');
     }
 
+    // If authenticated, prefer the customer cart over any stored id
+    if (sdk.auth.isAuthenticated) {
+      try {
+        final customerCart = await sdk.cart.getCustomerCart();
+        if (customerCart != null) {
+          _cartId = customerCart.id;
+          _currentCart = customerCart;
+          try {
+            await MagentoStorage.instance.saveCustomerCartId(customerCart.id);
+          } catch (_) {}
+          return _cartId!;
+        }
+      } catch (_) {
+        // continue to createCart()
+      }
+    }
+
     final cart = await sdk.cart.createCart();
     _cartId = cart.id;
     _currentCart = cart;
 
-    // Save to storage if not authenticated
+    // Save to storage
     try {
-      final isAuthenticated = sdk.auth.isAuthenticated;
-      if (!isAuthenticated) {
+      if (sdk.auth.isAuthenticated) {
+        await MagentoStorage.instance.saveCustomerCartId(cart.id);
+        await MagentoStorage.instance.clearCurrentCartId();
+        await MagentoStorage.instance.clearGuestCartId();
+      } else {
         await MagentoStorage.instance.saveCurrentCartId(cart.id);
+        await MagentoStorage.instance.saveGuestCartId(cart.id);
       }
     } catch (e) {
       // Storage might not be initialized, ignore
@@ -116,8 +168,29 @@ class CartService {
     }
 
     try {
-      final cart = await sdk.cart.getCart(_cartId!);
-      _currentCart = cart;
+      if (sdk.auth.isAuthenticated) {
+        // Authenticated users should use customerCart, not cart(cart_id: ...)
+        final customerCart = await sdk.cart.getCustomerCart();
+        _currentCart = customerCart;
+        if (customerCart != null) {
+          _cartId = customerCart.id;
+          try {
+            await MagentoStorage.instance.saveCustomerCartId(customerCart.id);
+            await MagentoStorage.instance.clearCurrentCartId();
+            await MagentoStorage.instance.clearGuestCartId();
+          } catch (_) {}
+        }
+      } else {
+        final cart = await sdk.cart.getCart(_cartId!);
+        _currentCart = cart;
+        if (cart != null) {
+          _cartId = cart.id;
+          try {
+            await MagentoStorage.instance.saveCurrentCartId(cart.id);
+            await MagentoStorage.instance.saveGuestCartId(cart.id);
+          } catch (_) {}
+        }
+      }
     } catch (e, stackTrace) {
       print('[CartService] Error refreshing cart: ${e.toString()}');
       print('[CartService] Stack trace: $stackTrace');
@@ -129,6 +202,32 @@ class CartService {
         _cartId = null;
         _currentCart = null;
       }
+    }
+  }
+
+  /// Call this immediately after successful login/register.
+  ///
+  /// It switches the example app from guest cart id → customer cart id, and
+  /// clears any guest/current ids to prevent 403s.
+  static Future<void> syncAfterLogin() async {
+    final sdk = MagentoService.sdk;
+    if (sdk == null) return;
+    if (!sdk.auth.isAuthenticated) return;
+
+    try {
+      var customerCart = await sdk.cart.getCustomerCart();
+      customerCart ??= await sdk.cart.createCart();
+
+      _currentCart = customerCart;
+      _cartId = customerCart.id;
+
+      try {
+        await MagentoStorage.instance.saveCustomerCartId(customerCart.id);
+        await MagentoStorage.instance.clearCurrentCartId();
+        await MagentoStorage.instance.clearGuestCartId();
+      } catch (_) {}
+    } catch (e) {
+      print('[CartService] syncAfterLogin failed: ${e.toString()}');
     }
   }
 

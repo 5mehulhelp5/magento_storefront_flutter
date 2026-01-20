@@ -7,6 +7,9 @@ A production-ready Flutter SDK for Magento 2 Storefront GraphQL API.
 - ✅ **Storefront Browsing** - Browse products, categories, and store information
 - ✅ **Authentication** - Customer login, registration, password reset
 - ✅ **Read-only Catalog** - Products, categories, and search functionality
+- ✅ **Cart (Guest + Customer)** - Create cart, add/update/remove items, fetch customer cart
+- ✅ **Guest → Customer Cart Merge** - Automatically merges guest cart items after login
+- ✅ **Local Persistence (Hive)** - Persist config, auth token, and cart IDs (optional)
 - ✅ **Custom GraphQL Queries** - Escape hatch for custom queries
 
 ## Installation
@@ -15,7 +18,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  magento_storefront_flutter: ^0.1.0
+  magento_storefront_flutter: ^0.0.1
 ```
 
 ## Getting Started
@@ -25,13 +28,19 @@ dependencies:
 ```dart
 import 'package:magento_storefront_flutter/magento_storefront_flutter.dart';
 
-// Initialize the SDK
+Future<void> main() async {
+  // Recommended if you use storage (default: enabled in MagentoSDK)
+  WidgetsFlutterBinding.ensureInitialized(); // in Flutter apps
+  await MagentoStorage.init();
+
+  // Initialize the SDK
 final sdk = MagentoSDK(
   config: MagentoConfig(
     baseUrl: 'https://yourstore.com',
     storeCode: 'default', // Optional
   ),
 );
+}
 ```
 
 ### Authentication
@@ -54,7 +63,7 @@ await auth.register(
 await auth.forgotPassword('user@example.com');
 
 // Logout (client-side only)
-auth.logout();
+await auth.logout();
 ```
 
 ### Browse Catalog
@@ -93,6 +102,29 @@ final category = await categories.getCategoryById('2');
 
 // Get category tree
 final categoryTree = await categories.getCategoryTree();
+```
+
+### Cart
+
+```dart
+final cart = sdk.cart;
+
+// Guest cart: create or reuse a cart id you store yourself
+final guestCart = await cart.createCart();
+
+// Add items
+final updated = await cart.addProductToCart(
+  cartId: guestCart.id,
+  sku: 'product-sku',
+  quantity: 1,
+);
+
+// Update / remove
+await cart.updateCartItem(cartId: updated.id, itemId: updated.items.first.id, quantity: 2);
+await cart.removeCartItem(cartId: updated.id, itemId: updated.items.first.id);
+
+// Authenticated users: fetch customer cart via customerCart query
+final customerCart = await cart.getCustomerCart();
 ```
 
 ### Store Information
@@ -141,7 +173,7 @@ final result = await custom.mutate(
 
 The SDK follows a clean, modular architecture:
 
-```
+```text
 lib/
  ├── magento_storefront_flutter.dart  # Main export
  ├── magento_sdk.dart                 # Main SDK class
@@ -227,24 +259,10 @@ final sdk = MagentoSDK(
 sdk.dispose();
 ```
 
-## Phase 1 Scope
+## Notes
 
-This is Phase 1 of the SDK, which includes:
-
-- ✅ Storefront browsing
-- ✅ Authentication (login, register, forgot password, logout)
-- ✅ Read-only catalog (products, categories, search)
-- ✅ Custom GraphQL escape hatch
-
-**Out of Scope (Future Phases):**
-
-- ❌ Cart operations
-- ❌ Checkout
-- ❌ Payments
-- ❌ Orders
-- ❌ Wishlist
-- ❌ Admin APIs
-- ❌ UI widgets
+- **Storage**: `MagentoSDK` uses storage by default (`useStorage: true`). Call `MagentoStorage.init()` before creating the SDK (recommended). If you don’t want persistence, pass `useStorage: false`.
+- **Cart & auth**: On login, if a guest cart with items exists, the SDK will try to **merge items into a customer cart** and persist the resulting cart id.
 
 ## License
 
@@ -252,4 +270,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contributing
 
-[Add contribution guidelines here]
+Issues and PRs are welcome.

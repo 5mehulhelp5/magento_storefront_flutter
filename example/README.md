@@ -9,6 +9,7 @@ This example app demonstrates how to use the Magento Storefront Flutter SDK.
 - ✅ **Products** - Get products by SKU, URL key, or category
 - ✅ **Categories** - Browse category tree and view category details
 - ✅ **Search** - Search products with pagination
+- ✅ **Cart** - Guest cart creation, add/update/remove items, cart badge/count
 - ✅ **Store Information** - View store configuration and available stores
 
 ## Getting Started
@@ -19,6 +20,7 @@ This example app demonstrates how to use the Magento Storefront Flutter SDK.
    - Optionally provide a store code (default: `default`)
 
 2. **Run the app**
+
    ```bash
    cd example
    flutter pub get
@@ -27,18 +29,21 @@ This example app demonstrates how to use the Magento Storefront Flutter SDK.
 
 ## App Structure
 
-```
+```text
 example/
 ├── lib/
 │   ├── main.dart                    # App entry point
 │   ├── services/
-│   │   └── magento_service.dart    # SDK initialization service
+│   │   ├── magento_service.dart    # SDK initialization service
+│   │   ├── cart_service.dart       # Cart helper (badge/count + refresh)
+│   │   └── storage_service.dart    # Local persistence bootstrap (Hive)
 │   └── screens/
 │       ├── config_screen.dart       # Configuration screen
 │       ├── home_screen.dart         # Main navigation screen
 │       ├── auth_screen.dart         # Authentication demo
 │       ├── products_screen.dart    # Products demo
 │       ├── product_detail_screen.dart # Product details
+│       ├── cart_screen.dart         # Cart demo
 │       ├── categories_screen.dart   # Categories demo
 │       ├── search_screen.dart       # Search demo
 │       └── store_info_screen.dart   # Store information demo
@@ -50,22 +55,36 @@ example/
 ### Authentication
 
 The app demonstrates:
+
 - Customer login with email and password
 - Customer registration
 - Password reset request
 - Logout functionality
+- Guest cart merge into a customer cart after login (when a guest cart has items)
 
 ### Products
 
 The app allows you to:
+
 - Search for products by SKU
 - Get products by URL key
 - Browse products by category ID
 - View product details including images, prices, and descriptions
+- Add products to cart from product details
+
+### Cart
+
+The app shows:
+
+- Creating a guest cart and persisting the active cart id locally
+- Viewing the cart, updating quantities, and removing items
+- Cart badge/count in the app bar
+- Guest cart merge into a customer cart after login (when a guest cart has items)
 
 ### Categories
 
 The app shows:
+
 - Complete category tree
 - Category details
 - Product count per category
@@ -74,6 +93,7 @@ The app shows:
 ### Search
 
 The app provides:
+
 - Full-text product search
 - Pagination support
 - Load more functionality
@@ -82,6 +102,7 @@ The app provides:
 ### Store Information
 
 The app displays:
+
 - Store configuration (currency, locale, timezone, etc.)
 - Available stores list
 - Store details
@@ -101,3 +122,4 @@ If you encounter issues:
 2. **GraphQL errors**: Ensure GraphQL is enabled in your Magento store
 3. **Authentication errors**: Check that the customer account exists and credentials are correct
 4. **Empty results**: Verify your store has products and categories configured
+5. **Cart (403 after login)**: For authenticated carts, use the customer cart flow; guest cart ids may not be accessible after login.

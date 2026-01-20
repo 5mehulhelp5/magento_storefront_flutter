@@ -787,4 +787,84 @@ class MagentoCartModule {
       );
     }
   }
+
+  /// Get customer's cart (authenticated users only)
+  ///
+  /// This uses Magento's `customerCart` query. Do **not** use `getCart(cartId)`
+  /// with a guest cart id after login — Magento will return 403.
+  Future<models.MagentoCart?> getCustomerCart() async {
+    final query = '''
+      query GetCustomerCart {
+        customerCart {
+          id
+          items {
+            id
+            quantity
+            product {
+              id
+              sku
+              name
+              url_key
+              description { html }
+              short_description { html }
+              image { url label position }
+              price_range {
+                minimum_price {
+                  regular_price { value currency }
+                  final_price { value currency }
+                }
+                maximum_price {
+                  regular_price { value currency }
+                  final_price { value currency }
+                }
+              }
+              stock_status
+            }
+            prices {
+              price { value currency }
+              row_total { value currency }
+            }
+          }
+          prices {
+            grand_total { value currency }
+            subtotal_excluding_tax { value currency }
+            subtotal_including_tax { value currency }
+          }
+          total_quantity
+        }
+      }
+    ''';
+
+    try {
+      final response = await _client.query(query);
+
+      final data = response['data'] as Map<String, dynamic>?;
+      if (data == null) {
+        throw MagentoException('Invalid response from server');
+      }
+
+      final cartData = data['customerCart'] as Map<String, dynamic>?;
+      if (cartData == null) {
+        return null;
+      }
+
+      return models.MagentoCart.fromJson(cartData);
+    } on MagentoException catch (e) {
+      MagentoLogger.error(
+        '[MagentoCart] Get customer cart error: ${e.toString()}',
+        e,
+      );
+      rethrow;
+    } catch (e, stackTrace) {
+      MagentoLogger.error(
+        '[MagentoCart] Failed to get customer cart: ${e.toString()}',
+        e,
+        stackTrace,
+      );
+      throw MagentoException(
+        'Failed to get customer cart: ${e.toString()}',
+        originalError: e,
+      );
+    }
+  }
 }
