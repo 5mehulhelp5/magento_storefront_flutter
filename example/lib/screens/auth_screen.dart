@@ -15,7 +15,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _registerFormKey = GlobalKey<FormState>();
   final _forgotPasswordFormKey = GlobalKey<FormState>();
 
-  final _loginEmailController = TextEditingController(text: 'bytesqa@bytestechnolab.comw');
+  final _loginEmailController = TextEditingController(text: 'bytesqa@bytestechnolab.com');
   final _loginPasswordController = TextEditingController(text: 'Test@123');
 
   final _registerEmailController = TextEditingController();

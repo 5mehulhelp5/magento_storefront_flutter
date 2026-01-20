@@ -14,6 +14,9 @@ export 'auth/magento_auth.dart';
 export 'models/product/product.dart';
 export 'models/category/category.dart';
 export 'models/store/store.dart';
+export 'models/store/country.dart';
+export 'models/customer/customer.dart';
+export 'models/customer/customer_address.dart';
 
 // Store exports
 export 'store/magento_store.dart';
@@ -28,6 +31,9 @@ export 'cart/magento_cart.dart';
 
 // Custom query exports
 export 'custom/magento_custom_query.dart';
+
+// Profile exports (READ-ONLY in Phase 1)
+export 'profile/magento_profile.dart';
 
 // Model exports (cart models)
 export 'models/cart/cart.dart';

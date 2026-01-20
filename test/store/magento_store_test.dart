@@ -204,4 +204,119 @@ void main() {
       expect(caughtException!.message, contains('Network error'));
     });
   });
+
+  group('getCountries', () {
+    test('should get countries successfully with regions and cities', () async {
+      final response = {
+        'data': {
+          'countries': [
+            {
+              'id': 'US',
+              'two_letter_abbreviation': 'US',
+              'three_letter_abbreviation': 'USA',
+              'full_name_english': 'United States',
+              'full_name_locale': 'United States',
+              'available_regions': [
+                {
+                  'id': '1',
+                  'code': 'CA',
+                  'name': 'California',
+                  'cities': [
+                    {
+                      'id': '1',
+                      'code': 'LA',
+                      'name': 'Los Angeles',
+                      'localized_name': 'Los Angeles',
+                    },
+                    {
+                      'id': '2',
+                      'code': 'SF',
+                      'name': 'San Francisco',
+                      'localized_name': 'San Francisco',
+                    },
+                  ],
+                },
+                {
+                  'id': '2',
+                  'code': 'NY',
+                  'name': 'New York',
+                  'cities': null,
+                },
+              ],
+            },
+            {
+              'id': 'GB',
+              'two_letter_abbreviation': 'GB',
+              'three_letter_abbreviation': 'GBR',
+              'full_name_english': 'United Kingdom',
+              'full_name_locale': 'United Kingdom',
+              'available_regions': null,
+            },
+          ],
+        },
+      };
+
+      when(mockClient.query(any)).thenAnswer((_) async => response);
+
+      final countries = await storeModule.getCountries();
+
+      expect(countries.length, 2);
+      expect(countries[0].twoLetterAbbreviation, 'US');
+      expect(countries[0].fullNameEnglish, 'United States');
+      expect(countries[0].availableRegions, isNotNull);
+      expect(countries[0].availableRegions!.length, 2);
+      
+      final california = countries[0].availableRegions!.first;
+      expect(california.code, 'CA');
+      expect(california.name, 'California');
+      expect(california.cities, isNotNull);
+      expect(california.cities!.length, 2);
+      expect(california.cities!.first.name, 'Los Angeles');
+      
+      expect(countries[1].twoLetterAbbreviation, 'GB');
+      expect(countries[1].availableRegions, isNull);
+    });
+
+    test('should return empty list when countries is null', () async {
+      when(mockClient.query(any)).thenAnswer((_) async => {
+            'data': <String, dynamic>{},
+          });
+
+      final countries = await storeModule.getCountries();
+
+      expect(countries, isEmpty);
+    });
+
+    test('should handle countries with missing optional fields', () async {
+      final response = {
+        'data': {
+          'countries': [
+            {
+              'id': 'US',
+              'two_letter_abbreviation': 'US',
+              // Missing other fields
+            },
+          ],
+        },
+      };
+
+      when(mockClient.query(any)).thenAnswer((_) async => response);
+
+      final countries = await storeModule.getCountries();
+
+      expect(countries.length, 1);
+      expect(countries[0].twoLetterAbbreviation, 'US');
+      expect(countries[0].fullNameEnglish, isNull);
+      expect(countries[0].availableRegions, isNull);
+    });
+
+    test('should throw exception when response data is null', () async {
+      when(mockClient.query(any)).thenAnswer((_) async => <String, dynamic>{});
+
+      expect(
+        () => storeModule.getCountries(),
+        throwsA(isA<MagentoException>()),
+      );
+    });
+  });
 }

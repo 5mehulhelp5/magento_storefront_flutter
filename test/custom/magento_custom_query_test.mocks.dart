@@ -46,6 +46,18 @@ class MockMagentoClient extends _i1.Mock implements _i3.MagentoClient {
           as _i2.MagentoConfig);
 
   @override
+  set onAuthFailure(void Function()? value) => super.noSuchMethod(
+    Invocation.setter(#onAuthFailure, value),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  set onCartFailure(void Function()? value) => super.noSuchMethod(
+    Invocation.setter(#onCartFailure, value),
+    returnValueForMissingStub: null,
+  );
+
+  @override
   void setAuthToken(String? token) => super.noSuchMethod(
     Invocation.method(#setAuthToken, [token]),
     returnValueForMissingStub: null,

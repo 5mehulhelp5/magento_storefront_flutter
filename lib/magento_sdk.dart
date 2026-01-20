@@ -10,6 +10,7 @@ import 'catalog/magento_products.dart';
 import 'catalog/magento_search.dart';
 import 'cart/magento_cart.dart';
 import 'custom/magento_custom_query.dart';
+import 'profile/magento_profile.dart';
 
 /// Main SDK class for Magento Storefront Flutter
 /// 
@@ -47,6 +48,7 @@ class MagentoSDK {
   late final MagentoSearch search;
   late final MagentoCartModule cart;
   late final MagentoCustomQuery custom;
+  late final MagentoProfile profile;
 
   /// Create a new MagentoSDK instance
   /// 
@@ -91,6 +93,7 @@ class MagentoSDK {
     products = MagentoProducts(_client);
     search = MagentoSearch(_client);
     custom = MagentoCustomQuery(_client);
+    profile = MagentoProfile(_client);
   }
 
   /// Save configuration to storage

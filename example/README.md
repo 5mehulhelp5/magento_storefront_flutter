@@ -6,6 +6,7 @@ This example app demonstrates how to use the Magento Storefront Flutter SDK.
 
 - ✅ **Configuration** - Initialize SDK with store URL and store code
 - ✅ **Authentication** - Login, Register, Forgot Password, Logout
+- ✅ **Customer Profile** - View and edit authenticated customer profile and addresses
 - ✅ **Products** - Get products by SKU, URL key, or category
 - ✅ **Categories** - Browse category tree and view category details
 - ✅ **Search** - Search products with pagination
@@ -46,7 +47,10 @@ example/
 │       ├── cart_screen.dart         # Cart demo
 │       ├── categories_screen.dart   # Categories demo
 │       ├── search_screen.dart       # Search demo
-│       └── store_info_screen.dart   # Store information demo
+│       ├── store_info_screen.dart   # Store information demo
+│       ├── profile_screen.dart      # Customer profile demo
+│       ├── edit_profile_screen.dart # Edit profile demo
+│       └── edit_address_screen.dart # Add/edit address demo
 └── pubspec.yaml
 ```
 
@@ -106,6 +110,44 @@ The app displays:
 - Store configuration (currency, locale, timezone, etc.)
 - Available stores list
 - Store details
+
+### Countries, Regions, and Cities
+
+The address form uses:
+
+- Country dropdown with all available countries
+- Region/State dropdown (populated based on selected country)
+- City dropdown (populated based on selected region)
+- Automatic cascading dropdowns for better UX
+- Fallback to manual entry if data is not available
+
+### Customer Profile
+
+The app demonstrates:
+
+- Fetching authenticated customer profile
+- Displaying customer information (name, email, gender, date of birth, subscription status)
+- Viewing customer addresses with full details
+- Editing customer profile information
+- Updating profile fields (name, gender, date of birth, newsletter subscription)
+- Handling authentication errors gracefully
+
+**Requirements:**
+- User must be authenticated (login required)
+- Token is automatically injected by the SDK after login
+
+**Edit Profile:**
+- Tap the edit icon in the profile screen to modify customer information
+- All fields are validated before submission
+- Success/error messages are displayed after update attempts
+- Note: Email cannot be updated via profile update (requires separate mutation)
+
+**Address Management:**
+- Add new addresses using the "Add New Address" button
+- Edit existing addresses by tapping "Edit" on any address card
+- Delete addresses by tapping "Delete" (with confirmation dialog)
+- Set default shipping and billing addresses
+- Note: Cannot delete addresses that are set as default shipping/billing
 
 ## Notes
 

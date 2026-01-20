@@ -6,6 +6,8 @@ A production-ready Flutter SDK for Magento 2 Storefront GraphQL API.
 
 - ✅ **Storefront Browsing** - Browse products, categories, and store information
 - ✅ **Authentication** - Customer login, registration, password reset
+- ✅ **Customer Profile** - Fetch and update authenticated customer profile
+- ✅ **Address Management** - Create, update, and delete customer addresses
 - ✅ **Read-only Catalog** - Products, categories, and search functionality
 - ✅ **Cart (Guest + Customer)** - Create cart, add/update/remove items, fetch customer cart
 - ✅ **Guest → Customer Cart Merge** - Automatically merges guest cart items after login
@@ -127,6 +129,59 @@ await cart.removeCartItem(cartId: updated.id, itemId: updated.items.first.id);
 final customerCart = await cart.getCustomerCart();
 ```
 
+### Customer Profile
+
+> **Auth required:** this module requires an authenticated customer token. The SDK injects
+> `Authorization: Bearer <token>` automatically after `sdk.auth.login(...)`.
+
+```dart
+final profile = sdk.profile;
+
+// Get customer profile
+final customer = await profile.getProfile();
+
+// Optional helper: addresses are included on the customer object
+final addresses = customer.addresses ?? [];
+
+// Update customer profile
+// Note: Email cannot be updated via this method (requires separate mutation)
+final updatedCustomer = await profile.updateProfile(
+  firstname: 'John',
+  lastname: 'Doe',
+  gender: 1, // 1 = Male, 2 = Female
+  dateOfBirth: '1990-05-15', // Format: YYYY-MM-DD
+  isSubscribed: true,
+);
+
+// Create a new address
+final newAddress = await profile.createAddress(
+  firstname: 'John',
+  lastname: 'Doe',
+  street: ['123 Main St', 'Apt 4B'],
+  city: 'Phoenix',
+  postcode: '85001',
+  countryCode: 'US',
+  telephone: '555-1234',
+  region: MagentoCustomerAddressRegion(
+    region: 'Arizona',
+    regionCode: 'AZ',
+  ),
+  defaultShipping: true,
+  defaultBilling: false,
+);
+
+// Update an existing address
+final updatedAddress = await profile.updateAddress(
+  id: '123',
+  city: 'New City',
+  postcode: '85002',
+);
+
+// Delete an address
+// Note: Cannot delete default shipping/billing addresses
+final deleted = await profile.deleteAddress('123');
+```
+
 ### Store Information
 
 ```dart
@@ -137,6 +192,22 @@ final config = await store.getStoreConfig();
 
 // Get available stores
 final stores = await store.getStores();
+
+// Get countries with regions and cities (for address forms)
+final countries = await store.getCountries();
+for (final country in countries) {
+  print('${country.fullNameEnglish} (${country.twoLetterAbbreviation})');
+  if (country.availableRegions != null) {
+    for (final region in country.availableRegions!) {
+      print('  - ${region.name} (${region.code})');
+      if (region.cities != null) {
+        for (final city in region.cities!) {
+          print('    - ${city.name}');
+        }
+      }
+    }
+  }
+}
 ```
 
 ### Custom GraphQL Queries

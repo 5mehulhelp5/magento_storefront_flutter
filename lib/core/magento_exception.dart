@@ -18,6 +18,18 @@ class MagentoAuthenticationException extends MagentoException {
   String toString() => 'MagentoAuthenticationException: $message';
 }
 
+/// Alias exception for SDK consumers who expect `AuthException`.
+///
+/// Kept for Phase-1 API stability: the SDK historically exposed
+/// `MagentoAuthenticationException`, while the Profile module spec uses
+/// `AuthException`.
+class AuthException extends MagentoAuthenticationException {
+  AuthException(super.message, {super.code, super.originalError});
+
+  @override
+  String toString() => 'AuthException: $message';
+}
+
 /// Exception thrown when a GraphQL query fails
 class MagentoGraphQLException extends MagentoException {
   final List<GraphQLError>? errors;
@@ -31,6 +43,17 @@ class MagentoGraphQLException extends MagentoException {
     }
     return 'MagentoGraphQLException: $message';
   }
+}
+
+/// Exception thrown when an unexpected/unknown Magento error occurs.
+///
+/// This maps to the Profile module spec's `UnknownMagentoException` name,
+/// while staying compatible with the SDK's base [MagentoException] type.
+class UnknownMagentoException extends MagentoException {
+  UnknownMagentoException(super.message, {super.code, super.originalError});
+
+  @override
+  String toString() => 'UnknownMagentoException: $message';
 }
 
 /// Exception thrown when network requests fail
